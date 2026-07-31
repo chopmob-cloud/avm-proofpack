@@ -1,0 +1,20 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Flip one bit inside the block header msgpack bytes.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "light-header-proof",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "byte_offset": 5,
+      "op": "flip_b64_bit",
+      "path": "block_header_msgpack_b64",
+      "xor": 1
+    }
+  ],
+  "name": "header-byte-flip",
+  "schema": "avm-proofpack-conformance/v1"
+}

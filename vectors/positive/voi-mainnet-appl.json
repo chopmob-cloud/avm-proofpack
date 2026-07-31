@@ -1,0 +1,53 @@
+{
+  "bundle_path": "../../tests/fixtures/voi-mainnet-appl.json",
+  "description": "Live-captured voi-mainnet-appl bundle. Verifies offline; every expected value below was derived by this library and must be reproduced byte-for-byte by a conforming implementation.",
+  "expected": {
+    "block_hash_hex": "f1ecb5a16f610278cce3d799540e3f304c9a8f796a68c80ab5b53e234e1560f6",
+    "block_headers_commitment_root_hex": "4194caca35fc822be893abf960cbbbd5af8abfd513caa6f9926634ada8807245",
+    "checks": [
+      "canonical-form",
+      "block-header",
+      "transaction-id",
+      "txn-commitment-membership",
+      "block-headers-commitment-membership",
+      "state-proof-present"
+    ],
+    "first_attested_round": 21208833,
+    "genesis_hash_hex": "af6d1f49023c8167bf90567388da2748f0972f0710987fe7c513af9e7b9e58e9",
+    "genesis_id": "voimain-v1.0",
+    "last_attested_round": 21209088,
+    "light_header_leaf_hash_hex": "598a186ed63d2bca77a3cd4d7209c6634e02bbb30543690c79e28b4390b334e2",
+    "light_header_variant": "block_hash",
+    "payment_facts": {
+      "amount": null,
+      "app_id": 47138069,
+      "asset_close_to": null,
+      "asset_id": null,
+      "close_remainder_to": null,
+      "fee": 1000,
+      "first_valid": 21209052,
+      "genesis_hash_b64": "r20fSQI8gWe/kFZziNonSPCXLwcQmH/nxROvnnueWOk=",
+      "genesis_id": "voimain-v1.0",
+      "group_b64": "DbF8+yBS33lBwb1jp26mT/pMXaVUaJ7vNWMmT8FWcHo=",
+      "last_valid": 21210052,
+      "limitations": [
+        "appl: a v1 bundle proves the application call is committed, but inner transactions, state deltas and logs (the call's effects) are NOT proven by this bundle; do not treat this evidence as proof of any payment made by the application"
+      ],
+      "note_b64": "YXJjY2pzLXYyLjEwLjY6dSBwb3N0X3ByaWNlIHRyYW5zYWN0aW9u",
+      "receiver": null,
+      "round": 21209054,
+      "sender": "PE2LI66K36ZRJLDCAPNOWFDNIBJGXB5I2IJLXDYYAHIHCINSK37UCYVLJM",
+      "txid": "YPKQYJQDVICJV6PHRSTPZW6MFWVCNPXOV2BZWRZVMJ2CFPGTVCYA",
+      "txn_type": "appl"
+    },
+    "round": 21209054,
+    "trust_root": "unattested",
+    "txid": "YPKQYJQDVICJV6PHRSTPZW6MFWVCNPXOV2BZWRZVMJ2CFPGTVCYA",
+    "txn_commitment_root_hex": "e19538b7324ce07c852cb6e9dd5f8c1c67ed7a70b24a753a9db7331f5beb13f8",
+    "txn_leaf_hash_hex": "e19538b7324ce07c852cb6e9dd5f8c1c67ed7a70b24a753a9db7331f5beb13f8",
+    "verifies": true
+  },
+  "kind": "positive",
+  "name": "voi-mainnet-appl",
+  "schema": "avm-proofpack-conformance/v1"
+}

@@ -1,0 +1,20 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Flip one bit in the state proof's block-headers commitment (the light-header membership root).",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "light-header-proof",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "byte_offset": 0,
+      "op": "flip_b64_bit",
+      "path": "state_proof_message.block_headers_commitment_b64",
+      "xor": 1
+    }
+  ],
+  "name": "headers-commitment-flip",
+  "schema": "avm-proofpack-conformance/v1"
+}

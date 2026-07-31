@@ -1,0 +1,24 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Shift the attested interval by one round in each direction, so the light-header element index is wrong.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "light-header-proof",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "delta": 1,
+      "op": "add_int",
+      "path": "state_proof_message.first_attested_round"
+    },
+    {
+      "delta": 1,
+      "op": "add_int",
+      "path": "state_proof_message.last_attested_round"
+    }
+  ],
+  "name": "interval-shift",
+  "schema": "avm-proofpack-conformance/v1"
+}

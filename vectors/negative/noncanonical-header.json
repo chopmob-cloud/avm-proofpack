@@ -1,0 +1,19 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Re-encode the block header with a non-shortest integer so it decodes to the same header but is not canonical.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "canonical",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "op": "set",
+      "path": "block_header_msgpack_b64",
+      "value": "3gAWomJpzgCAn3KkZWFybs4AA1SwomZjzTqZpGZlZXPEIMf8zbJY8NQYnCv4ttaO5pdQhkKwrQAfMfy5GMNUuoWapGZyYWPPAAAAAZpz1iqjZ2VurG1haW5uZXQtdjEuMKJnaMQgwGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit+icHDOAIC8vqRwcmV2xCDU9QgXgJSzt+zjKkEhtae1JZiS/vn5p1mI4P7pnxNY5KdwcmV2NTEyxEC4BraO0tSA79BF0yk8NRB9MkIgh4k9EKBNdl6gkorQohwvu4pMkpqxXOdqfZIaQVFywU4aLoATJfhnU88EwqSQpXByb3Rv2VlodHRwczovL2dpdGh1Yi5jb20vYWxnb3JhbmRmb3VuZGF0aW9uL3NwZWNzL3RyZWUvOTUzMzA0ZGUzNTI2NGZjM2VmOTFiY2QwNWMxMjMyNDIwMTVlZWFlZKNwcnDEIGKyi1QjDmv6K9eGNjKvEgrkmwhnGmytpAewisalx+Zvo3JuZM4DyoikpnJ3Y2Fscs4D0JAAo3J3ZMQg/v////////////////////////////////////////+kc2VlZMQgi2Pn5GWj2vRWXE4KKpCAsTKqI0HBwB9LeqiCFoKquf+jc3B0gcwAgaFuzgPKiQCidGPO2f6bqqJ0c85qa+E4o3R4bsQg20/jz0DHhTZy2Sz4AGumuIBMJwpVWvxOacIhcMX7btKmdHhuMjU2xCC8os2QjN1TSrPWldWK2K13hMHtOR1TWjK+0F57hndqrKZ0eG41MTLEQEjkhn0tB7uEwQrkcikfhIpM7cpDEnmpD9bYIuWwLPsSJMFq3Q/QO0IAyApeD4n/1bj/wkANxX+NvpWPwxuStA4="
+    }
+  ],
+  "name": "noncanonical-header",
+  "schema": "avm-proofpack-conformance/v1"
+}

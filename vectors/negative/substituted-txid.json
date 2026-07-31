@@ -1,0 +1,19 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Replace the claimed transaction id with a different one.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "transaction",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "op": "set",
+      "path": "transaction.txid",
+      "value": "ACQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA"
+    }
+  ],
+  "name": "substituted-txid",
+  "schema": "avm-proofpack-conformance/v1"
+}

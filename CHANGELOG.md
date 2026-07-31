@@ -4,6 +4,24 @@ All notable changes to avm-proofpack. The bundle format (SPEC.md) is
 versioned separately from the library; every release below reads and writes
 format version 1 unchanged.
 
+## Unreleased
+
+### Added
+
+- `vectors/`: a frozen, documented **cross-implementation conformance vector
+  set** (SPEC.md section 7). `vectors/positive/*.json` records, per fixture,
+  the authoritative derived values an independent verifier must reproduce
+  (genesis hash, txid, block hash, `txn256` root, transaction and light-header
+  leaf hashes, block-headers commitment root, attested interval, trust root,
+  and extracted `PaymentFacts`); `vectors/negative/*.json` is a canonical
+  tamper set, each naming the exact fail-closed step. Every expected value is
+  generated from the live fixtures by the reference library
+  (`vectors/generate.py`), never hand-authored, and `tests/test_vectors.py`
+  re-validates the whole set against the library so it cannot drift. See
+  `vectors/README.md` for the file format, encoding conventions, `schema`
+  versioning and the declarative mutation DSL. Additive and stdlib-only; no
+  change to the bundle format or existing verification behaviour.
+
 ## 0.2.0 (unreleased)
 
 Additive release. Bundle format v1 is unchanged; every 0.1.0 bundle

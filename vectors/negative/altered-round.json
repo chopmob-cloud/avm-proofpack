@@ -1,0 +1,19 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Advance the claimed round by one (stays inside the attested interval, so schema validation still passes).",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "block-header",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "delta": 1,
+      "op": "add_int",
+      "path": "transaction.round"
+    }
+  ],
+  "name": "altered-round",
+  "schema": "avm-proofpack-conformance/v1"
+}

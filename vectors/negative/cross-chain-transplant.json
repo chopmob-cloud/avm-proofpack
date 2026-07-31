@@ -1,0 +1,26 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-appl.json",
+  "description": "Substitute a Voi state proof message and light-header proof for an Algorand bundle.",
+  "expected": {
+    "detail": "round 63604900 outside attested interval [21208833, 21209088]",
+    "error_type": "BundleError",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "from_fixture": "voi-mainnet-appl",
+      "from_path": "state_proof_message",
+      "op": "copy_from",
+      "path": "state_proof_message"
+    },
+    {
+      "from_fixture": "voi-mainnet-appl",
+      "from_path": "light_header_proof",
+      "op": "copy_from",
+      "path": "light_header_proof"
+    }
+  ],
+  "name": "cross-chain-transplant",
+  "schema": "avm-proofpack-conformance/v1"
+}

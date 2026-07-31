@@ -1,0 +1,19 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Claim the 'seed' light-header variant for a bundle committed under the 'block_hash' variant.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "light-header-proof",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "op": "set",
+      "path": "meta.light_header_variant",
+      "value": "seed"
+    }
+  ],
+  "name": "variant-flip",
+  "schema": "avm-proofpack-conformance/v1"
+}

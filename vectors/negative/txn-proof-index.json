@@ -1,0 +1,19 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Advance the transaction proof's element index by one.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "txn-proof",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "delta": 1,
+      "op": "add_int",
+      "path": "txn_proof.index"
+    }
+  ],
+  "name": "txn-proof-index",
+  "schema": "avm-proofpack-conformance/v1"
+}

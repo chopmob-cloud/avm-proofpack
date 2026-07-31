@@ -178,3 +178,30 @@ and the proof is empty.
   explicitly.
 - **Non-goals**: no absence proofs (a bundle proves inclusion, never
   non-inclusion), no account-state proofs, no consensus-liveness guarantees.
+
+## 7. Conformance vectors
+
+The [`vectors/`](vectors/) directory is the **normative cross-implementation
+test set** for this format. It is the contract a second implementation (for
+example a JS or Go verifier) runs to prove byte-for-byte agreement with the
+reference, so that "avm-proofpack" names a format, not just this one library.
+
+- `vectors/positive/*.json` — one per live-captured fixture. Each records the
+  authoritative derived values a conforming verifier must reproduce: the
+  genesis hash, txid, block hash, transaction-commitment root (`txn256`), the
+  transaction Merkle leaf and light-block-header leaf, the block-headers
+  commitment root, the attested interval, the ordered check list, the
+  `"unattested"` trust root, and the extracted `PaymentFacts`.
+- `vectors/negative/*.json` — a canonical tamper set. Each names the exact step
+  at which verification must fail closed. A negative vector passes **iff**
+  verification fails **at the named step** (section 4's step labels); failing
+  at a different step is a disagreement, not a pass.
+
+Every expected value is generated from the fixtures by the reference library
+(`vectors/generate.py`); none is hand-authored, and `tests/test_vectors.py`
+re-checks the whole set against the library on every run so it cannot drift.
+The vector file format, encoding conventions (lowercase-hex digests, base32
+txid), the `schema` versioning rule and the declarative mutation DSL are
+documented in [`vectors/README.md`](vectors/README.md). A new implementation
+should treat any vector it cannot reproduce as either its own bug or a genuine
+ambiguity in this document worth resolving at the spec level.

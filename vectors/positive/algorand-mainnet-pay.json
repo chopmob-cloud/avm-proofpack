@@ -1,0 +1,51 @@
+{
+  "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Live-captured algorand-mainnet-pay bundle. Verifies offline; every expected value below was derived by this library and must be reproduced byte-for-byte by a conforming implementation.",
+  "expected": {
+    "block_hash_hex": "ea9b7fb12624954cd15655423f0721b30fdc37c2663d048ffd5494db31f6eea5",
+    "block_headers_commitment_root_hex": "2576808ddcede50c9ff634a292062e7f100bc6d279f9f1b5d9341635eb3014f0",
+    "checks": [
+      "canonical-form",
+      "block-header",
+      "transaction-id",
+      "txn-commitment-membership",
+      "block-headers-commitment-membership",
+      "state-proof-present"
+    ],
+    "first_attested_round": 63604737,
+    "genesis_hash_hex": "c061c4d8fc1dbdded2d7604be4568e3f6d041987ac37bde4b620b5ab39248adf",
+    "genesis_id": "mainnet-v1.0",
+    "last_attested_round": 63604992,
+    "light_header_leaf_hash_hex": "13deb2b7fc77fc4964a478eb7e1755218d8fdcbf162625d0225cde82f71303f2",
+    "light_header_variant": "block_hash",
+    "payment_facts": {
+      "amount": 230000,
+      "app_id": null,
+      "asset_close_to": null,
+      "asset_id": null,
+      "close_remainder_to": null,
+      "fee": 1000,
+      "first_valid": 63604896,
+      "genesis_hash_b64": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+      "genesis_id": "mainnet-v1.0",
+      "group_b64": null,
+      "last_valid": 63605896,
+      "limitations": [],
+      "note_b64": null,
+      "receiver": "JFNBMPWLEPDNVG4CGMAHYMJGCYMPQHIJTIVAXJ5EPUQ67UK2D4WZAXR2CE",
+      "round": 63604900,
+      "sender": "AWRPZ7U6PQBEPJIDK2LVUANT6L26EEITMH5RBKOVLZHH2V6JHM7BPNQN6U",
+      "txid": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+      "txn_type": "pay"
+    },
+    "round": 63604900,
+    "trust_root": "unattested",
+    "txid": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+    "txn_commitment_root_hex": "bca2cd908cdd534ab3d695d58ad8ad7784c1ed391d535a32bed05e7b86776aac",
+    "txn_leaf_hash_hex": "bcd68456e26d79a9e924b5518a4aaabe9e6c7c203c6e5656a68d1ba07afce819",
+    "verifies": true
+  },
+  "kind": "positive",
+  "name": "algorand-mainnet-pay",
+  "schema": "avm-proofpack-conformance/v1"
+}

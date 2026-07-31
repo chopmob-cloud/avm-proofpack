@@ -1,0 +1,53 @@
+{
+  "bundle_path": "../../tests/fixtures/algorand-mainnet-appl.json",
+  "description": "Live-captured algorand-mainnet-appl bundle. Verifies offline; every expected value below was derived by this library and must be reproduced byte-for-byte by a conforming implementation.",
+  "expected": {
+    "block_hash_hex": "ea9b7fb12624954cd15655423f0721b30fdc37c2663d048ffd5494db31f6eea5",
+    "block_headers_commitment_root_hex": "2576808ddcede50c9ff634a292062e7f100bc6d279f9f1b5d9341635eb3014f0",
+    "checks": [
+      "canonical-form",
+      "block-header",
+      "transaction-id",
+      "txn-commitment-membership",
+      "block-headers-commitment-membership",
+      "state-proof-present"
+    ],
+    "first_attested_round": 63604737,
+    "genesis_hash_hex": "c061c4d8fc1dbdded2d7604be4568e3f6d041987ac37bde4b620b5ab39248adf",
+    "genesis_id": "mainnet-v1.0",
+    "last_attested_round": 63604992,
+    "light_header_leaf_hash_hex": "13deb2b7fc77fc4964a478eb7e1755218d8fdcbf162625d0225cde82f71303f2",
+    "light_header_variant": "block_hash",
+    "payment_facts": {
+      "amount": null,
+      "app_id": 1284326447,
+      "asset_close_to": null,
+      "asset_id": null,
+      "close_remainder_to": null,
+      "fee": 2001,
+      "first_valid": 63604898,
+      "genesis_hash_b64": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+      "genesis_id": "mainnet-v1.0",
+      "group_b64": null,
+      "last_valid": 63605898,
+      "limitations": [
+        "appl: a v1 bundle proves the application call is committed, but inner transactions, state deltas and logs (the call's effects) are NOT proven by this bundle; do not treat this evidence as proof of any payment made by the application"
+      ],
+      "note_b64": null,
+      "receiver": null,
+      "round": 63604900,
+      "sender": "TIGER63IT7F5HDLXJYLXRPXGWAT6JCLWCN7OJBR4VGYTFQTPDNCKZHCDAU",
+      "txid": "KOERHNGJPLUUQK4WJ4YPY5OC3BOINDH2J4E6HM2RYARSJ5R3FAYA",
+      "txn_type": "appl"
+    },
+    "round": 63604900,
+    "trust_root": "unattested",
+    "txid": "KOERHNGJPLUUQK4WJ4YPY5OC3BOINDH2J4E6HM2RYARSJ5R3FAYA",
+    "txn_commitment_root_hex": "bca2cd908cdd534ab3d695d58ad8ad7784c1ed391d535a32bed05e7b86776aac",
+    "txn_leaf_hash_hex": "a26a1cac37006f20360a057e5ff2b8b9e50d81ad113ba0d0d873de01d899da48",
+    "verifies": true
+  },
+  "kind": "positive",
+  "name": "algorand-mainnet-appl",
+  "schema": "avm-proofpack-conformance/v1"
+}

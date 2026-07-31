@@ -1,0 +1,20 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Flip one bit in the chain genesis hash.",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "block-header",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [
+    {
+      "byte_offset": 0,
+      "op": "flip_b64_bit",
+      "path": "chain.genesis_hash_b64",
+      "xor": 1
+    }
+  ],
+  "name": "genesis-hash-flip",
+  "schema": "avm-proofpack-conformance/v1"
+}

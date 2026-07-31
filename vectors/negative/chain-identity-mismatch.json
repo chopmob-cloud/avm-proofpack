@@ -1,0 +1,16 @@
+{
+  "base_bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+  "description": "Verify a valid bundle while pinning a different chain via expected_genesis_hash (all-zero here).",
+  "expected": {
+    "error_type": "VerificationError",
+    "failed_check": "chain-identity",
+    "verifies": false
+  },
+  "kind": "negative",
+  "mutation": [],
+  "name": "chain-identity-mismatch",
+  "schema": "avm-proofpack-conformance/v1",
+  "verify_options": {
+    "expected_genesis_hash_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}
