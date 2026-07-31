@@ -167,5 +167,14 @@ and the proof is empty.
   redemption.
 - **Privacy**: a bundle reveals the transaction, its block position and its
   content. Treat disclosure as opt-in where receipts hash transaction ids.
+- **Top-level transaction only**: a bundle proves the inclusion of one
+  top-level transaction. For `appl` transactions the *effects* of the call,
+  inner transactions, state deltas, logs, live in the stib's apply data,
+  which has no commitment path to the state proof message in format v1.
+  A v1 bundle therefore proves that an application call happened, not what
+  it did; payments made by inner transactions are NOT proven. Consumers
+  extracting payment semantics (e.g. `avm-proofpack extract`) MUST treat
+  `appl` evidence accordingly; the extraction API flags this limitation
+  explicitly.
 - **Non-goals**: no absence proofs (a bundle proves inclusion, never
   non-inclusion), no account-state proofs, no consensus-liveness guarantees.

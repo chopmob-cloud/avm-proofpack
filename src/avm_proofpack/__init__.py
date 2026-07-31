@@ -12,6 +12,15 @@ can re-verify the transaction against chain consensus forever, offline::
 
 from .bundle import Bundle, BundleError, dump_bundle
 from .capture import CaptureError, NotYetProvable, capture
+from .chains import CHAINS, Chain, UnknownChainError, get_chain
+from .extract import (
+    ExtractionError,
+    PaymentFacts,
+    decode_address,
+    encode_address,
+    extract_payment,
+    matches_reference,
+)
 from .mpack import DecodeError, EncodeError
 from .verify import (
     CorroborationReport,
@@ -22,22 +31,32 @@ from .verify import (
     verify_bundle,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Bundle",
     "BundleError",
+    "CHAINS",
     "CaptureError",
+    "Chain",
     "CorroborationReport",
     "CorroborationResult",
     "DecodeError",
     "EncodeError",
+    "ExtractionError",
     "NotYetProvable",
+    "PaymentFacts",
+    "UnknownChainError",
     "VerificationError",
     "VerificationReport",
     "__version__",
     "capture",
     "corroborate",
+    "decode_address",
     "dump_bundle",
+    "encode_address",
+    "extract_payment",
+    "get_chain",
+    "matches_reference",
     "verify_bundle",
 ]

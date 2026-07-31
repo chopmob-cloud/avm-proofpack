@@ -79,15 +79,45 @@ avm-proofpack verify evidence.json \
   --corroborate https://mainnet-api.4160.nodely.dev,https://mainnet-api.algonode.cloud
 ```
 
+Or pin by registry name (`algorand-mainnet`, `algorand-testnet`,
+`voi-mainnet`; mutually exclusive with `--genesis-hash`), letting
+`--corroborate default` expand to the chain's default node list:
+
+```bash
+avm-proofpack verify evidence.json --chain algorand-mainnet --corroborate default
+```
+
+Extract the payment facts of the proven transaction (same trust-root gating
+as `verify`; stdout is one JSON object):
+
+```bash
+avm-proofpack extract evidence.json --chain algorand-mainnet --corroborate default
+```
+
+Extraction covers the top-level transaction only: for `appl` transactions
+the output states explicitly that inner-transaction effects are not proven
+by a v1 bundle (SPEC.md section 6).
+
 From Python:
 
 ```python
-from avm_proofpack import Bundle, capture, verify_bundle
+from avm_proofpack import Bundle, capture, extract_payment, verify_bundle
 
 bundle_dict = capture("https://mainnet-api.voi.nodely.io", txid, round_number)
-report = verify_bundle(Bundle.from_dict(bundle_dict))
+bundle = Bundle.from_dict(bundle_dict)
+report = verify_bundle(bundle)
 print(report.checks)
+
+facts = extract_payment(bundle, report=report)  # or omit report: verifies itself
+print(facts.txn_type, facts.sender, facts.receiver, facts.amount)
 ```
+
+`extract_payment` refuses to read facts out of unverified bytes: it either
+verifies the bundle itself or cross-checks the supplied report against the
+bundle. `matches_reference` closes the hashed-receipt privacy loop
+(docs/INTEGRATION.md): it recomputes e.g.
+`sha256("{tenant}:{txid}:{network}")` from the verified txid and compares
+in constant time.
 
 ## What verification proves
 
@@ -146,7 +176,11 @@ verification to fail closed each time.
 
 ## Licence
 
-Apache-2.0. Cryptographic semantics (domain separators, vector commitment
+Apache-2.0, Copyright 2026 AlgoVoi. Created and maintained by AlgoVoi and
+offered as a gift to the Algorand and Voi communities: free to use, modify, and
+redistribute, with the attribution in [NOTICE](NOTICE) retained (Apache-2.0,
+Section 4). Cryptographic semantics (domain separators, vector commitment
 structure, canonical encoding) follow
 [go-algorand](https://github.com/algorand/go-algorand); each is cited at its
-point of use in the source.
+point of use in the source. avm-proofpack is a clean-room implementation and
+contains no go-algorand code.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "avm-proofpack"
-version = "0.1.0"
+version = "0.2.0"
 description = "Portable, offline-verifiable transaction evidence for Algorand and Voi, anchored in state proofs"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,11 +23,19 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/chopmob-cloud/avm-proofpack"
+Repository = "https://github.com/chopmob-cloud/avm-proofpack"
+Issues = "https://github.com/chopmob-cloud/avm-proofpack/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 
 [project.scripts]
 avm-proofpack = "avm_proofpack.cli:main"
+
+[tool.setuptools]
+license-files = ["LICENSE", "NOTICE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
