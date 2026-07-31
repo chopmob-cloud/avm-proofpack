@@ -1,0 +1,152 @@
+# avm-proofpack
+
+Portable, offline-verifiable transaction evidence for **Algorand** and **Voi**,
+anchored in [state proofs](https://developer.algorand.org/docs/get-details/stateproofs/).
+
+A *proofpack bundle* is a single JSON file binding a specific transaction to a
+chain's state proof commitments. Capture it once, while public nodes still
+hold the round, and anyone can re-check it forever, offline, with no node and
+no SDK: the verifier recomputes every hash and Merkle link from raw bytes and
+confirms the transaction is committed by the bundle's state proof message.
+
+Read the trust model before you rely on it. Offline verification proves
+internal consistency down to one trust root: the bundle's own state proof
+message. That message is **not** cryptographically verified offline in this
+release, so offline-alone does not prove the message was genuinely produced by
+the chain's consensus stake. Raising that trust root is a separate, explicit
+step, `--corroborate` compares the message against independent nodes today;
+Falcon signature verification of the state proof (removing node trust
+entirely) is the planned next tier. Treat a structure-only result as "this
+bundle is internally consistent", not "consensus attests this". See
+[SPEC.md](SPEC.md) section 6.
+
+Zero runtime dependencies. Pure Python. Works unchanged on any AVM chain that
+generates state proofs (verified live against Algorand mainnet and Voi mainnet).
+
+## Why
+
+Payment processors, custodians and auditors routinely assert "transaction X
+settled on chain Y" and back it with nothing but their own signature. Algorand
+and Voi commit, every 256 rounds, to a stake-signed vector commitment over
+their block headers, which makes such claims *falsifiable*: evidence can be
+checked against consensus itself rather than against the claimant.
+
+Two facts shape the design:
+
+1. **Public nodes prune.** Non-archival nodes serve proof material for roughly
+   the most recent 1,000 rounds only. Evidence must therefore be captured near
+   settlement time and stored; it cannot be fetched years later on demand.
+2. **Verification must not require trusting the capturer.** A bundle carries
+   raw canonical bytes, not quoted values; the verifier recomputes every hash
+   and Merkle link itself.
+
+## Install
+
+```bash
+pip install avm-proofpack
+```
+
+(Or vendor the `src/avm_proofpack` directory; it is stdlib-only by design.)
+
+## Usage
+
+Capture evidence for a confirmed transaction (any algod endpoint):
+
+```bash
+avm-proofpack capture \
+  --node https://mainnet-api.algonode.cloud \
+  --txid KOERHNGJPLUUQK4WJ4YPY5OC3BOINDH2J4E6HM2RYARSJ5R3FAYA \
+  --round 63604900 \
+  -o evidence.json
+```
+
+A state proof covers a round only after its 256-round interval closes
+(roughly 12 to 15 minutes); pass `--wait 1200` to poll until then.
+
+Verify it later. Structure-only verification is fully offline but reports the
+trust root as unattested and exits non-zero unless you either corroborate or
+explicitly accept unattested evidence:
+
+```bash
+avm-proofpack verify evidence.json --accept-unattested
+```
+
+Pin the chain and corroborate the trust root against independent nodes:
+
+```bash
+avm-proofpack verify evidence.json \
+  --genesis-hash wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8= \
+  --corroborate https://mainnet-api.4160.nodely.dev,https://mainnet-api.algonode.cloud
+```
+
+From Python:
+
+```python
+from avm_proofpack import Bundle, capture, verify_bundle
+
+bundle_dict = capture("https://mainnet-api.voi.nodely.io", txid, round_number)
+report = verify_bundle(Bundle.from_dict(bundle_dict))
+print(report.checks)
+```
+
+## What verification proves
+
+Offline, from the bundle's raw bytes alone, the verifier re-derives:
+
+1. the transaction id (both its SHA-512/256 and SHA-256 forms) from the
+   canonical transaction bytes, binding the claimed txid to the evidence;
+2. the transaction Merkle leaf and its membership in the block's SHA-256
+   transaction commitment;
+3. the block hash, the light block header encoding, and its membership in the
+   state proof's block-headers commitment.
+
+The remaining trust root is the state proof message itself. `--corroborate`
+reduces that from "the capturing node was honest" to "these independent nodes
+do not all collude". Cryptographic verification of the state proof's Falcon
+signatures (removing node trust entirely) is the planned next tier; the bundle
+already stores the raw state proof so existing bundles will upgrade without
+recapture.
+
+Two operational consequences of node pruning:
+
+- **Capture promptly.** Non-archival nodes serve proof material for only
+  ~1,000 rounds. Capture soon after the interval closes, or use an archival
+  node.
+- **Corroborate promptly, or against an archival node.** `--corroborate`
+  queries `/v2/stateproofs/{round}`, which is subject to the same pruning, so
+  corroboration of a months-old round needs an archival node. Corroborating at
+  or near capture time (the intended workflow) always works.
+
+See [SPEC.md](SPEC.md) for the format and the full verification algorithm, and
+[docs/INTEGRATION.md](docs/INTEGRATION.md) for how to attach bundles to
+payment-protocol receipts.
+
+## What this is not
+
+- **Not a bridge.** A bundle proves an event happened; it does not make anyone
+  pay. Redemption safety is an escrow-design problem, deliberately out of
+  scope.
+- **Not stronger than the chain.** An adversary controlling a supermajority of
+  stake could sign a false history; evidence inherits the source chain's
+  security assumption, no more.
+- **Not private.** A bundle necessarily reveals the transaction it proves.
+  Systems that hash transaction ids for privacy should treat bundle disclosure
+  as opt-in (see docs/INTEGRATION.md).
+
+## Development
+
+```bash
+pip install -e .[dev]
+python -m pytest            # offline: unit vectors, live-captured fixtures, tamper suite
+```
+
+The test fixtures are real bundles captured from Algorand and Voi mainnet. The
+tamper suite mutates every component of every fixture and requires
+verification to fail closed each time.
+
+## Licence
+
+Apache-2.0. Cryptographic semantics (domain separators, vector commitment
+structure, canonical encoding) follow
+[go-algorand](https://github.com/algorand/go-algorand); each is cited at its
+point of use in the source.
