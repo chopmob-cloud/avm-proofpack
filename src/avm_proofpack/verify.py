@@ -130,6 +130,12 @@ def verify_bundle(
 
     # -- block header sanity ---------------------------------------------
     header_round = header.get("rnd")
+    # Require a genuine integer round: bool subclasses int, and a header
+    # encoding 'rnd' as msgpack true/false survives the canonical-form gate,
+    # so guard against it explicitly (mirrors bundle.py's _uint) before the
+    # equality check below can be satisfied by True == 1.
+    if not isinstance(header_round, int) or isinstance(header_round, bool):
+        raise _fail("block-header", f"header round is not an integer: {header_round!r}")
     if header_round != bundle.round:
         raise _fail(
             "block-header",

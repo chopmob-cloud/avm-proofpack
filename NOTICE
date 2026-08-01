@@ -15,3 +15,12 @@ canonical msgpack encoding) follow the Algorand reference implementation,
 go-algorand (https://github.com/algorand/go-algorand), and are cited at their
 point of use. avm-proofpack is an independent, clean-room implementation of
 those semantics and includes no go-algorand source code.
+
+The experimental trust-root groundwork in
+src/avm_proofpack/_experimental/ (not part of the published distribution)
+implements Falcon-1024 signature verification following the Falcon
+specification and the algorand/falcon C reference semantics
+(https://github.com/algorand/falcon), and state-proof message reconstruction
+following go-algorand. These too are independent, clean-room implementations,
+cited at their point of use, and include no go-algorand or Falcon-reference
+source code.
