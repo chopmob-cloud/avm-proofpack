@@ -95,6 +95,17 @@ def test_default_corroboration_nodes_are_https():
             assert url.startswith("https://"), url
 
 
+def test_mainnet_chains_have_multiple_corroboration_defaults():
+    """`--corroborate default` is only meaningful against >= 2 endpoints, so
+    every mainnet chain (algorand-mainnet, voi-mainnet) must ship at least
+    two distinct defaults out of the box. Guards the Voi single-node gap from
+    regressing."""
+    for name in ("algorand-mainnet", "voi-mainnet"):
+        nodes = get_chain(name).default_corroboration_nodes
+        assert len(nodes) >= 2, f"{name} ships < 2 default corroboration nodes"
+        assert len(set(nodes)) == len(nodes), f"{name} has duplicate defaults"
+
+
 def test_caip2_reference_is_base64url_prefix():
     for chain in CHAINS.values():
         namespace, reference = chain.caip2.split(":")

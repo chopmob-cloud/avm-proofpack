@@ -81,7 +81,8 @@ avm-proofpack verify evidence.json \
 
 Or pin by registry name (`algorand-mainnet`, `algorand-testnet`,
 `voi-mainnet`; mutually exclusive with `--genesis-hash`), letting
-`--corroborate default` expand to the chain's default node list:
+`--corroborate default` expand to the chain's default node list (both
+`algorand-mainnet` and `voi-mainnet` ship two default endpoints):
 
 ```bash
 avm-proofpack verify evidence.json --chain algorand-mainnet --corroborate default
@@ -133,9 +134,11 @@ Offline, from the bundle's raw bytes alone, the verifier re-derives:
 The remaining trust root is the state proof message itself. `--corroborate`
 reduces that from "the capturing node was honest" to "these independent nodes
 do not all collude". Cryptographic verification of the state proof's Falcon
-signatures (removing node trust entirely) is the planned next tier; the bundle
-already stores the raw state proof so existing bundles will upgrade without
-recapture.
+signatures (removing node trust entirely) is the next tier; groundwork for it
+lives in `src/avm_proofpack/_experimental/` (a working Falcon-1024 verifier and
+state-proof message reconstruction) but is **not shipped and not wired into
+verification** yet (see [Experimental](#experimental) below). The bundle already
+stores the raw state proof, so existing bundles will upgrade without recapture.
 
 Two operational consequences of node pruning:
 
@@ -163,16 +166,47 @@ payment-protocol receipts.
   Systems that hash transaction ids for privacy should treat bundle disclosure
   as opt-in (see docs/INTEGRATION.md).
 
+## Experimental
+
+`src/avm_proofpack/_experimental/` holds the groundwork for the next trust
+tier: cryptographic verification of the state proof itself, which would remove
+node trust and make `--corroborate` unnecessary. It currently contains:
+
+- `falcon.py` — a stdlib-only Falcon-1024 (deterministic, compressed) signature
+  verifier, validated against authentic go-algorand/Falcon known-answer vectors
+  (`tests/falcon_kat/`).
+- `stateproof.py` — reconstruction of the 32-byte state-proof *message hash*
+  each reveal's Falcon signature is verified over, proven against real captured
+  reveals.
+
+This package is deliberately quarantined and **not part of the published
+package**: it is excluded from the built distribution, is not imported by
+`verify_bundle`, and changes no shipped behaviour. Verifying a state proof's
+Falcon signatures proves only that some ephemeral keys signed the message; it is
+**not** attestation until key-commitment membership, the signed-weight
+threshold, coin-based reveal selection, and voters-commitment anchoring are
+implemented. Do not gate any trust decision on it.
+
+A design for exposing capture/verify as a gRPC + REST service (additive to the
+zero-dependency core) is sketched in
+[design/grpc-rest-service-design.md](design/grpc-rest-service-design.md),
+including its mandatory security requirements.
+
 ## Development
 
 ```bash
 pip install -e .[dev]
 python -m pytest            # offline: unit vectors, live-captured fixtures, tamper suite
+
+python scripts/adversarial_secval.py \
+    tests/fixtures/algorand-mainnet-pay.json tests/fixtures/voi-mainnet-appl.json
 ```
 
 The test fixtures are real bundles captured from Algorand and Voi mainnet. The
 tamper suite mutates every component of every fixture and requires
-verification to fail closed each time.
+verification to fail closed each time. `scripts/adversarial_secval.py` is a
+standalone adversarial harness that asserts every forgery, cross-chain, and
+report-confusion attempt against real bundles fails closed.
 
 ## Licence
 
@@ -181,6 +215,8 @@ offered as a gift to the Algorand and Voi communities: free to use, modify, and
 redistribute, with the attribution in [NOTICE](NOTICE) retained (Apache-2.0,
 Section 4). Cryptographic semantics (domain separators, vector commitment
 structure, canonical encoding) follow
-[go-algorand](https://github.com/algorand/go-algorand); each is cited at its
-point of use in the source. avm-proofpack is a clean-room implementation and
-contains no go-algorand code.
+[go-algorand](https://github.com/algorand/go-algorand); the experimental
+Falcon-1024 verifier follows the Falcon specification and the
+[algorand/falcon](https://github.com/algorand/falcon) C reference semantics.
+Each is cited at its point of use in the source. avm-proofpack is a clean-room
+implementation and contains no go-algorand or Falcon-reference code.

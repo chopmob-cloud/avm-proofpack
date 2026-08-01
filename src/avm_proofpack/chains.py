@@ -122,10 +122,18 @@ CHAINS: dict[str, Chain] = {
             # Extracted from tests/fixtures/voi-mainnet-appl.json, a
             # live-captured bundle that verifies offline against this hash.
             "r20fSQI8gWe/kFZziNonSPCXLwcQmH/nxROvnnueWOk=",
-            # The only Voi endpoint cited in this repository. A single
-            # default cannot by itself demonstrate operator independence;
-            # add further nodes for meaningful corroboration.
-            ("https://mainnet-api.voi.nodely.io",),
+            # Two Voi mainnet endpoints so `--corroborate default` works out
+            # of the box, mirroring algorand-mainnet. Both were verified
+            # serving /v2/stateproofs and agreeing on a live-captured bundle.
+            # NB: both are operated by Nodely (region/deployment diversity,
+            # not full operator independence). Add a genuinely independent
+            # operator's Voi node here when one is available for stronger
+            # corroboration; callers can always pass their own via
+            # --corroborate.
+            (
+                "https://mainnet-api.voi.nodely.io",
+                "https://mainnet-api.voi.nodely.dev",
+            ),
         ),
     )
 }
