@@ -32,6 +32,8 @@ transport entry points without the extra raises a clear
 """
 from __future__ import annotations
 
+from .health import health
+
 import asyncio
 from typing import Any
 
@@ -299,7 +301,11 @@ def make_service(service, auth: ApiKeyAuth | None = None):
         async def _rpc_health(self, stream):
             # Health is EXEMPT from auth (liveness probes carry no credential).
             await stream.recv_message()
-            await stream.send_message(HealthResponse(ok=True, version="0.2.0"))
+            # Version is derived from installed package metadata (health()),
+            # never hardcoded, so it cannot drift from the release.
+            await stream.send_message(
+                HealthResponse(ok=True, version=health()["version"])
+            )
 
         async def _rpc_capture_stream(self, stream):
             # Server-streaming progress. Auth first (before any dial); then run
