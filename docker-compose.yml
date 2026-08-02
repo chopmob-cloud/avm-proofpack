@@ -1,0 +1,82 @@
+# avm-proofpack service (design/grpc-rest-service-design.md §6-§7).
+#
+# Brings up the proofpack-server (gRPC + REST behind one ProofpackService).
+#
+# On the "algod + proofpack-server" topology: the server does NOT hold a node
+# URL of its own. The algod endpoint is supplied PER REQUEST by the caller
+# (`source_node` on Capture, `nodes` on Corroborate) and dialled through the S1
+# egress guard. That guard REFUSES any private / loopback / link-local / ULA
+# address, so a compose-internal algod sidecar (which gets an RFC1918 address on
+# the docker network) is refused by default and cannot be reached as shipped.
+# The supported topology is therefore: point captures at an EXTERNAL, public
+# algod endpoint (e.g. https://testnet-api.algonode.cloud or your own archival
+# node reachable at a public address). A local sandbox algod is sketched at the
+# bottom, commented out, with the egress caveat spelled out.
+
+services:
+  proofpack-server:
+    build: .
+    image: avm-proofpack:latest
+    ports:
+      - "8080:8080"     # REST  (AVM_PROOFPACK_REST_PORT)
+      - "50051:50051"   # gRPC  (AVM_PROOFPACK_GRPC_PORT)
+    environment:
+      # --- bind / transports (config.py: host, rest_port, grpc_port; __main__: transports) ---
+      AVM_PROOFPACK_HOST: 0.0.0.0
+      AVM_PROOFPACK_REST_PORT: 8080
+      AVM_PROOFPACK_GRPC_PORT: 50051
+      AVM_PROOFPACK_TRANSPORTS: grpc,rest
+      # --- API-key auth (config.py: api_key_file) ---
+      # One key per line. Provided via a docker secret (mounted at
+      # /run/secrets/api_key), never baked into the image.
+      AVM_PROOFPACK_API_KEY_FILE: /run/secrets/api_key
+      # --- TLS (config.py: tls_cert_file / tls_key_file) ---
+      # In-process TLS is default-ON when BOTH are set. Leave both unset to bind
+      # plaintext (intended ONLY behind a TLS-terminating reverse proxy). Paths
+      # point at the read-only ./certs bind mount below; no cert/key is committed.
+      AVM_PROOFPACK_TLS_CERT_FILE: /certs/server.crt
+      AVM_PROOFPACK_TLS_KEY_FILE: /certs/server.key
+      # --- optional background capture scheduler (config.py: scheduler_*) ---
+      # Default OFF. Enable only with an NTP-synced host clock (the scheduler
+      # treats the wall clock as a trust input and runs a startup sanity check).
+      AVM_PROOFPACK_SCHEDULER_ENABLED: "0"
+      AVM_PROOFPACK_SCHEDULER_POLL_INTERVAL: "60"
+    volumes:
+      # TLS material, read-only. Put server.crt / server.key here (git-ignored);
+      # nothing secret is committed to the repo.
+      - ./certs:/certs:ro
+      # SQLite bundle/job store persistence. NOTE: the shipped `python -m
+      # avm_proofpack_server` entry point constructs the service with an
+      # in-memory (store=None) backend; this named volume is provisioned so a
+      # deployment that wires a SqliteBundleStore has a durable, writable path
+      # at /data. See docs/service.md ("Persistence").
+      - proofpack-data:/data
+    secrets:
+      - api_key
+    restart: unless-stopped
+
+  # --- OPTIONAL local sandbox algod (commented out) -----------------------
+  # A compose-internal algod gets a private (RFC1918) address on the docker
+  # network. The S1 egress guard REFUSES private/loopback/link-local targets,
+  # so the proofpack-server CANNOT dial this sidecar as shipped (there is no
+  # env var to relax the guard's private-range denial). Use an external public
+  # node instead. This block is kept only to document the topology.
+  #
+  # algod:
+  #   image: algorand/algod:latest
+  #   environment:
+  #     NETWORK: testnet
+  #     FAST_CATCHUP: "1"
+  #   ports:
+  #     - "8081:8080"   # algod REST (host-exposed, for direct/manual use)
+  #   volumes:
+  #     - algod-data:/algod/data
+
+volumes:
+  proofpack-data:
+  # algod-data:
+
+secrets:
+  # Create ./api-key (git-ignored) with one API key per line before `up`.
+  api_key:
+    file: ./api-key

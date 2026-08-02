@@ -69,14 +69,15 @@ def _uintfield(data: dict, key: str, context: str) -> int:
     return value
 
 
-def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.0) -> dict:
+def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.0,
+           opener=None, validator=None) -> dict:
     """Capture and return a verified bundle dict for ``txid`` in ``round_number``."""
     # Validate before either value is interpolated into a URL path.
     txid_to_bytes(txid)  # raises ValueError unless 52-char base32 of 32 bytes
     if not isinstance(round_number, int) or isinstance(round_number, bool) or round_number <= 0:
         raise CaptureError(f"round must be a positive integer, got {round_number!r}")
 
-    client = NodeClient(node_url, timeout=timeout)
+    client = NodeClient(node_url, timeout=timeout, opener=opener, validator=validator)
 
     # State proof covering the round (404 with a specific message until the
     # interval is attested, surfaced as NotYetProvable for callers to poll).

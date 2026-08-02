@@ -1,0 +1,170 @@
+// avm-proofpack service contract (Phase 0).
+//
+// Two transports (gRPC + a thin REST gateway) map onto ONE service layer.
+// This file is the machine-readable contract; it is finalised here in Phase 0
+// and the generated stubs are vendored in later phases.
+//
+// Security notes baked into the contract (design §9, S1-S6):
+//
+//   S3 (full-fidelity PaymentFact): PaymentFact below carries EVERY field
+//       avm_proofpack.extract.PaymentFacts / as_dict() surfaces. Dropping the
+//       close-out / clawback / appl caveats lets a consumer over-credit a
+//       payment, so all of them cross the wire.
+//
+//   S4 (the bundle is the sole trust anchor): EVERY response that carries a
+//       verdict also carries `bundle_json`. `report` / `fully_corroborated`
+//       are NON-AUTHORITATIVE hints; a correct consumer re-verifies
+//       `bundle_json` offline with verify_bundle. There is deliberately NO
+//       verdict-only RPC (VerifyResponse/ExtractResponse/CorroborateResponse
+//       all echo the bytes). A signed server verdict is intentionally absent:
+//       it would lend cryptographic confidence to an unverified answer.
+
+syntax = "proto3";
+
+package avm_proofpack.v1;
+
+service Proofpack {
+  // Fetch + verify + bundle a single transaction's evidence.
+  rpc Capture(CaptureRequest) returns (CaptureResponse);
+  // Same as Capture but streams progress (a capture can wait for state-proof
+  // maturity, tens of seconds); keeps the connection alive.
+  rpc CaptureStream(CaptureRequest) returns (stream CaptureProgress);
+  // Re-verify caller-supplied bundle bytes; returns the bytes + a report hint.
+  rpc Verify(VerifyRequest) returns (VerifyResponse);
+  // Extract payment facts from caller-supplied bundle bytes.
+  rpc Extract(ExtractRequest) returns (ExtractResponse);
+  // Compare a bundle's state-proof message against independent nodes.
+  rpc Corroborate(CorroborateRequest) returns (CorroborateResponse);
+  // Liveness / version.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message CaptureRequest {
+  string chain = 1;
+  string txid = 2;
+  uint64 round = 3;
+  // source_node / corroboration_nodes are attacker-controlled once the server
+  // dials them; the service MUST route every outbound dial through the S1
+  // egress guard (SSRF control). wait_seconds is clamped server-side (S2);
+  // uint32 alone permits ~136 years.
+  string source_node = 4;
+  bool corroborate = 5;
+  repeated string corroboration_nodes = 6;
+  uint32 wait_seconds = 7;
+  // Tenant scope for the content-addressed store (S5). Ownership is enforced
+  // on every store method; a not-owned bundle is masked as not-found.
+  string tenant = 8;
+}
+
+message CaptureResponse {
+  bytes bundle_json = 1;                             // the trust anchor (S4)
+  VerificationReport report = 2;                     // non-authoritative hint
+  repeated CorroborationResult corroboration_results = 3;
+}
+
+message CaptureProgress {
+  enum Stage {
+    FETCHING_STATE_PROOF = 0;
+    FETCHING_TXN_PROOF = 1;
+    FETCHING_BLOCK = 2;
+    FETCHING_NEXT_BLOCK = 3;
+    VERIFYING = 4;
+    CORROBORATING = 5;
+    DONE = 6;
+    FAILED = 7;
+  }
+  Stage stage = 1;
+  string message = 2;
+}
+
+message VerifyRequest {
+  bytes bundle_json = 1;
+  string expected_genesis_hash_b64 = 2;
+  bool accept_unattested = 3;
+}
+
+message VerifyResponse {
+  // S4: the verdict never travels without the bytes it is about.
+  bytes bundle_json = 1;
+  VerificationReport report = 2;                     // non-authoritative hint
+}
+
+message VerificationReport {
+  string txid = 1;
+  uint64 round = 2;
+  string genesis_id = 3;
+  string genesis_hash_b64 = 4;
+  string block_hash_b64 = 5;
+  string txn_commitment_b64 = 6;
+  string light_header_variant = 7;
+  uint64 first_attested_round = 8;
+  uint64 last_attested_round = 9;
+  string block_headers_commitment_b64 = 10;
+  string voters_commitment_b64 = 11;
+  repeated string checks = 12;
+  string trust_root = 13;
+}
+
+message ExtractRequest {
+  bytes bundle_json = 1;
+}
+
+message ExtractResponse {
+  bytes bundle_json = 1;                             // S4: bytes accompany facts
+  repeated PaymentFact facts = 2;
+  string genesis_hash_b64 = 3;
+}
+
+// Full parity with avm_proofpack.extract.PaymentFacts.as_dict() (S3). The
+// close-out, clawback and appl caveats are load-bearing: dropping them lets a
+// consumer credit `amount` while missing that the sender's ENTIRE balance was
+// swept via a close-out, or that an `appl` "payment" is not proven at all by a
+// v1 bundle. All fields the library surfaces MUST cross the wire.
+message PaymentFact {
+  string txn_type = 1;                 // pay | axfer | appl | other
+  string sender = 2;
+  uint64 fee = 3;
+  uint64 first_valid = 4;
+  uint64 last_valid = 5;
+  bytes  note = 6;                     // as_dict renders this base64; wire is raw bytes
+  string group_b64 = 7;
+  string receiver_address = 8;         // omitted-zero surfaces as the zero address
+  uint64 amount = 9;
+  string close_remainder_to = 10;      // set => sender's ENTIRE balance also moved (> amount)
+  uint64 asset_id = 11;
+  string asset_close_to = 12;          // set => sender's ENTIRE asset balance also moved
+  uint64 app_id = 13;
+  repeated string limitations = 14;    // appl inner-txn caveat, rekey, clawback, ...
+}
+
+message CorroborateRequest {
+  bytes bundle_json = 1;
+  repeated string nodes = 2;
+}
+
+message CorroborateResponse {
+  bytes bundle_json = 1;                             // S4: bytes accompany verdict
+  repeated CorroborationResult results = 2;
+  bool fully_corroborated = 3;                       // non-authoritative hint
+}
+
+message CorroborationResult {
+  string node = 1;
+  bool matches = 2;
+  // CHOICE (design §7 / plan Phase 0): the witnessed commitment is a base64
+  // STRING named `witnessed_commitment_b64`, NOT a `_b64`-suffixed bytes field.
+  // Rationale: every other commitment on this wire (block_hash_b64,
+  // txn_commitment_b64, voters_commitment_b64, ...) is a base64 string, so a
+  // string keeps the contract internally consistent and human-inspectable
+  // through the JSON REST gateway; the `_b64` suffix now correctly describes a
+  // string. (A `bytes witnessed_commitment` would be more compact but would be
+  // the lone binary commitment on the wire.)
+  string witnessed_commitment_b64 = 3;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool ok = 1;
+  string version = 2;
+}

@@ -328,7 +328,8 @@ def _message_fields(message: dict) -> tuple:
 
 
 def corroborate(
-    bundle: Bundle, node_urls: list[str], *, timeout: float = 30.0
+    bundle: Bundle, node_urls: list[str], *, timeout: float = 30.0,
+    opener=None, validator=None
 ) -> CorroborationReport:
     """Compare the bundle's state proof message against independent nodes."""
     expected = (
@@ -341,7 +342,7 @@ def corroborate(
     results: list[CorroborationResult] = []
     for url in node_urls:
         try:
-            client = NodeClient(url, timeout=timeout)
+            client = NodeClient(url, timeout=timeout, opener=opener, validator=validator)
             response = client.get_json(f"/v2/stateproofs/{bundle.round}")
             message = response.get("Message")
             if not isinstance(message, dict):

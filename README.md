@@ -192,6 +192,24 @@ zero-dependency core) is sketched in
 [design/grpc-rest-service-design.md](design/grpc-rest-service-design.md),
 including its mandatory security requirements.
 
+## Service (optional)
+
+An **optional, additive** gRPC + REST service exposes the same capture / verify /
+extract / corroborate operations to non-Python consumers. It lives behind an
+extra and does **not** touch the core: `pip install avm-proofpack` stays
+zero-dependency and offline verification is unchanged. The service (and only the
+service) pulls a transport runtime:
+
+```bash
+pip install "avm-proofpack[server]"
+python -m avm_proofpack_server        # gRPC on :50051, REST on :8080
+```
+
+The server's verdict is a non-authoritative hint; consumers re-verify the bundle
+offline exactly as above. See [docs/service.md](docs/service.md) for
+configuration, TLS, API-key auth, the endpoints, Docker/compose, and the full
+security model.
+
 ## Development
 
 ```bash

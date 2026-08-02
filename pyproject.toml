@@ -30,6 +30,7 @@ Issues = "https://github.com/chopmob-cloud/avm-proofpack/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+server = ["grpclib==0.4.7", "betterproto==2.0.0b7", "uvicorn==0.30.6"]
 
 [project.scripts]
 avm-proofpack = "avm_proofpack.cli:main"

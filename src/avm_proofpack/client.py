@@ -27,22 +27,29 @@ class NodeNotFound(NodeError):
 
 
 class NodeClient:
-    def __init__(self, base_url: str, *, timeout: float = 30.0, token: str = "") -> None:
+    def __init__(self, base_url: str, *, timeout: float = 30.0, token: str = "",
+                 opener: urllib.request.OpenerDirector | None = None,
+                 validator: object | None = None) -> None:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValueError(f"node URL must be http(s)://host[:port], got {base_url!r}")
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.token = token
+        self.opener = opener
+        self.validator = validator
 
     def _get(self, path: str) -> bytes:
         url = self.base_url + path
+        if self.validator is not None:
+            self.validator(url)
+        opener = self.opener or urllib.request
         headers = {"User-Agent": "avm-proofpack"}
         if self.token:
             headers["X-Algo-API-Token"] = self.token
         request = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with opener.urlopen(request, timeout=self.timeout) as response:
                 body = response.read(_MAX_RESPONSE_BYTES + 1)
         except urllib.error.HTTPError as exc:
             excerpt = exc.read(512).decode("utf-8", errors="replace")

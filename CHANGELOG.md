@@ -8,6 +8,28 @@ format version 1 unchanged.
 
 ### Added
 
+- **Optional gRPC + REST service layer** (`src/avm_proofpack_server/`), behind
+  the new `avm-proofpack[server]` extra. Two transports over ONE
+  `ProofpackService`: a `grpclib` gRPC server and a thin stdlib ASGI REST
+  gateway served by `uvicorn`, exposing `Capture` / `CaptureStream` / `Verify` /
+  `Extract` / `Corroborate` / `Health` (gRPC) and the matching `/v1/` endpoints
+  (REST, with NDJSON streaming capture). The service is a **separate
+  distribution shape**: the extra pulls the transport runtime
+  (`grpclib==0.4.7`, `betterproto==2.0.0b7`, `uvicorn==0.30.6`), while the
+  verification **core (`src/avm_proofpack/`) stays zero-dependency and
+  behaviourally unchanged** — `pip install avm-proofpack` pulls nothing but
+  CPython stdlib, and offline verification is untouched. Ships with an SSRF
+  egress guard on every outbound dial (S1), global/per-key concurrency and
+  node/wait bounds (S2), full-fidelity `PaymentFact` on the wire (S3), a
+  bundle-is-the-sole-trust-anchor contract with no verdict-only path (S4), a
+  tenant-scoped content-addressed store (S5), constant-time API-key auth, and
+  in-process TLS (or reverse-proxy termination). The experimental
+  Falcon/state-proof tier is NOT part of the service and does not remove node
+  trust. Packaged via a multi-stage `Dockerfile` (non-root, `python:3.12-slim`,
+  runs `python -m avm_proofpack_server`) and `docker-compose.yml`; documented in
+  [docs/service.md](docs/service.md). The published proto contract lives in
+  `protos/avm_proofpack/v1/`. Additive; no change to the bundle format or
+  existing verification behaviour.
 - `vectors/`: a frozen, documented **cross-implementation conformance vector
   set** (SPEC.md section 7). `vectors/positive/*.json` records, per fixture,
   the authoritative derived values an independent verifier must reproduce
