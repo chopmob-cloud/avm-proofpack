@@ -4,7 +4,7 @@ All notable changes to avm-proofpack. The bundle format (SPEC.md) is
 versioned separately from the library; every release below reads and writes
 format version 1 unchanged.
 
-## Unreleased
+## 0.3.0 - 2026-08-02
 
 ### Added
 
