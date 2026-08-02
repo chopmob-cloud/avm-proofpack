@@ -24,6 +24,10 @@ bundle is internally consistent", not "consensus attests this". See
 Zero runtime dependencies. Pure Python. Works unchanged on any AVM chain that
 generates state proofs (verified live against Algorand mainnet and Voi mainnet).
 
+Documentation: [docs.algovoi.co.uk/avm-proofpack](https://docs.algovoi.co.uk/avm-proofpack),
+including how the bundle binds x402 settlement evidence to
+[offline-verifiable receipts](https://docs.algovoi.co.uk/offline-verifiable-receipts).
+
 ## Why
 
 Payment processors, custodians and auditors routinely assert "transaction X

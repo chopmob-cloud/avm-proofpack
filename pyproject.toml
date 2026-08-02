@@ -25,6 +25,7 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/chopmob-cloud/avm-proofpack"
+Documentation = "https://docs.algovoi.co.uk/avm-proofpack"
 Repository = "https://github.com/chopmob-cloud/avm-proofpack"
 Issues = "https://github.com/chopmob-cloud/avm-proofpack/issues"
 
