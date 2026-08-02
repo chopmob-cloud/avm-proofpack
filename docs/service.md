@@ -73,8 +73,13 @@ The repo ships a `Dockerfile` (multi-stage, `python:3.12-slim`, non-root, instal
 `.[server]`, runs `python -m avm_proofpack_server`) and a `docker-compose.yml`.
 
 ```bash
-# 1. Provide an API key file (one key per line), git-ignored:
-printf 'change-me-to-a-long-random-key\n' > api-key
+# 1. Provide an API key file (one key per line), git-ignored.
+#    It is bind-mounted as a compose file-secret and read by the container's
+#    NON-ROOT `proofpack` user, so it must be readable by that user — a mode
+#    0600 file owned by another uid makes the container crash-loop with
+#    PermissionError on /run/secrets/api_key. Make it group/other-readable
+#    (0644) or use a real secrets backend that mounts it 0444.
+printf 'change-me-to-a-long-random-key\n' > api-key && chmod 644 api-key
 
 # 2. (optional) Provide TLS material for in-process TLS:
 mkdir -p certs

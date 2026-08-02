@@ -78,5 +78,9 @@ volumes:
 
 secrets:
   # Create ./api-key (git-ignored) with one API key per line before `up`.
+  # It is bind-mounted into the container and read by the NON-ROOT `proofpack`
+  # user, so it must be readable by that user: `chmod 644 ./api-key`. A 0600
+  # file owned by another uid makes the container crash-loop with
+  # PermissionError on /run/secrets/api_key.
   api_key:
     file: ./api-key
