@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "avm-proofpack"
 version = "0.3.0"
-description = "Portable, offline-verifiable transaction evidence for Algorand and Voi, anchored in state proofs"
+description = "Offline Algorand and Voi state-proof verification in Python: portable, recomputable transaction evidence anchored in state proofs"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [{ name = "AlgoVoi" }]
-keywords = ["algorand", "voi", "state-proofs", "merkle", "verification", "receipts"]
+keywords = ["algorand", "voi", "state-proofs", "state-proof-verification", "merkle", "verification", "offline", "python", "receipts", "transaction-evidence"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

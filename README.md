@@ -1,7 +1,8 @@
 # avm-proofpack
 
-Portable, offline-verifiable transaction evidence for **Algorand** and **Voi**,
-anchored in [state proofs](https://developer.algorand.org/docs/get-details/stateproofs/).
+**A Python library for offline Algorand state-proof verification.** Portable,
+offline-verifiable transaction evidence for **Algorand** and **Voi**, anchored in
+[state proofs](https://developer.algorand.org/docs/get-details/stateproofs/).
 
 A *proofpack bundle* is a single JSON file binding a specific transaction to a
 chain's state proof commitments. Capture it once, while public nodes still
