@@ -93,6 +93,38 @@ Note on counts: `sp["pr"]` holds 151 *positions to reveal* while `sp["r"]` holds
 not use `len(pr)` as the reveal count when iterating (`iter_reveals` yields `(position, reveal)` pairs,
 not bare reveals).
 
+
+## VERIFIED — steps 5 and 6 (authenticated inputs) on real mainnet data
+
+```
+round                    66457600   (previous interval 66457344)
+declared weight w        1,960,644,431,120,003
+positions to reveal      151
+message's OWN ln         2,230,417
+AUTHENTICATED ln         2,230,418        <- differ by exactly 1, as the interval model predicts
+
+threshold with AUTHENTICATED ln         : True
+threshold with message's OWN ln         : True    <- this fixture does NOT discriminate
+coin selection, authenticated inputs    : True
+coin selection, message's OWN c + ln    : False   <- correct rejection
+```
+
+**The offset is real and observable**: the message's own `ln_proven_weight` is one greater than the
+previous interval's, which is exactly the trap round 1 fell into — feeding the message value in gives an
+attacker-chosen bound, and the values are close enough that the defect is invisible without knowing the
+interval model.
+
+**Honest caveat, recorded because a reviewer will ask:** for this fixture the *threshold* check passes
+with either value, because the declared weight (~1.96e15) clears both bounds comfortably. The
+discrimination comes from **coin selection**, which returns `False` when given the message's own
+participants commitment and ln. So step 5 alone is not a sufficient pin — the authenticated-input
+guarantee must be pinned through coin selection, and a dedicated small-weight fixture should be built so
+the threshold itself discriminates too.
+
+**Remaining offline gap:** this probe fetched the previous interval's message live. For the tier to be
+claimable offline, the bundle must carry the previous interval's message alongside its own — that is a
+capture-format change (A6 step 1 extension), not a verifier change.
+
 ## Definition of done
 
 The spike script (`netblock` + `verify` on a real bundle) returns exit code `0`, prints
