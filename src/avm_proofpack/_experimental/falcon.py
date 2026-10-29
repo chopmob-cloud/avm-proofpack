@@ -80,16 +80,20 @@ from __future__ import annotations
 import hashlib
 
 __all__ = [
+    "BETA_SQ",
+    "CT_COEFFICIENT_BITS",
+    "CT_SIGNATURE_SIZE",
+    "HEADER_DET_COMPRESSED",
+    "HEADER_DET_CT",
+    "HEADER_STANDARD_COMPRESSED",
+    "PUBLIC_KEY_SIZE",
+    "SALT_LEN",
     "FalconError",
     "N",
     "Q",
-    "BETA_SQ",
-    "PUBLIC_KEY_SIZE",
-    "SALT_LEN",
-    "HEADER_STANDARD_COMPRESSED",
-    "HEADER_DET_COMPRESSED",
-    "falcon1024_verify",
     "falcon1024_accepts",
+    "falcon1024_verify",
+    "signature_ct_representation",
 ]
 
 # --- Falcon-1024 parameters (see module docstring for sources) --------------
@@ -105,6 +109,21 @@ PUBKEY_HEADER = 0x00 | LOGN  # 0x0a
 SALT_LEN = 40
 HEADER_STANDARD_COMPRESSED = 0x30 | LOGN  # 0x3a
 HEADER_DET_COMPRESSED = HEADER_STANDARD_COMPRESSED | 0x80  # 0xba
+
+#: ``FALCON_DET1024_SIG_CT_HEADER`` (``algorand/falcon`` ``deterministic.h``):
+#: ``0x5a | 0x80``. The header byte of the constant-time ("CT") det1024
+#: signature format that ``ConvertToCT`` emits.
+HEADER_DET_CT = (0x50 | LOGN) | 0x80  # 0xda
+
+#: Bits per s2 coefficient in the CT encoding. This is
+#: ``max_sig_bits[logn=10]`` (``algorand/falcon`` ``codec.c``): each of the
+#: ``N`` signed coefficients (range -2047..+2047) is packed into exactly 12
+#: bits (11-bit magnitude + sign), MSB-first, matching ``Zf(trim_i16_encode)``.
+CT_COEFFICIENT_BITS = 12
+
+#: ``FALCON_DET1024_SIG_CT_SIZE`` = ``FALCON_SIG_CT_SIZE(10) - 40 + 1`` = 1538:
+#: 1 header byte + 1 salt-version byte + ``N*12/8`` = 1536 coefficient bytes.
+CT_SIGNATURE_SIZE = 2 + (N * CT_COEFFICIENT_BITS) // 8  # 1538
 
 _HASH_REJECT = 5 * Q  # 61445
 _MAX_ABS_S2 = 2047  # comp_decode coefficient range is -2047..+2047
@@ -367,3 +386,69 @@ def falcon1024_accepts(
         return falcon1024_verify(public_key, message, signature)
     except FalconError:
         return False
+
+
+def _trim_i16_encode(coeffs: list[int], bits: int) -> bytes:
+    """Fixed-width MSB-first packing of signed coefficients (``trim_i16_encode``).
+
+    Faithful to the C reference ``Zf(trim_i16_encode)`` (``algorand/falcon``
+    ``codec.c``): each coefficient is stored in exactly ``bits`` bits as the low
+    ``bits`` bits of its 16-bit two's-complement value, packed most-significant
+    bit first; a trailing partial byte is left-padded with zero bits. Every
+    coefficient must lie in ``[-(2**(bits-1)-1), 2**(bits-1)-1]``. Raises
+    :class:`FalconError` on an out-of-range coefficient.
+    """
+    maxv = (1 << (bits - 1)) - 1
+    mask = (1 << bits) - 1
+    acc = 0
+    acc_len = 0
+    out = bytearray()
+    for c in coeffs:
+        if c < -maxv or c > maxv:
+            raise FalconError("signature coefficient out of range for CT encoding")
+        acc = (acc << bits) | (c & mask)
+        acc_len += bits
+        while acc_len >= 8:
+            acc_len -= 8
+            out.append((acc >> acc_len) & 0xFF)
+    if acc_len:
+        out.append((acc << (8 - acc_len)) & 0xFF)
+    return bytes(out)
+
+
+def signature_ct_representation(signature: bytes) -> bytes:
+    """Return the fixed-length CT representation of a det1024 compressed signature.
+
+    This is exactly ``crypto.FalconSignature.GetFixedLengthHashableRepresentation``
+    (``go-algorand`` ``crypto/falconWrapper.go``), which calls the C
+    ``falcon_det1024_convert_compressed_to_ct`` (``algorand/falcon``
+    ``deterministic.c``). The state-proof signature-tree leaf commits this
+    representation, not the variable-length compressed bytes, so the sig tree is
+    a fixed-length (SNARK-friendly) commitment.
+
+    Layout (:data:`CT_SIGNATURE_SIZE` = 1538 bytes)::
+
+        HEADER_DET_CT (0xda) || salt_version (1 byte) ||
+            trim_i16_encode(s2, 12)   (1536 bytes)
+
+    where ``s2`` is the compressed signature's decoded coefficient polynomial
+    (:func:`_comp_decode`) and ``salt_version`` is the compressed signature's
+    byte 1. Only the det1024 compressed header (``0xba``) is accepted -- state
+    proofs never carry the standard (``0x3a``) or CT input formats. Raises
+    :class:`FalconError` on any structural malformation (fail-closed).
+    """
+    signature = _require_bytes("signature", signature)
+    if len(signature) < 2:
+        raise FalconError("signature too short")
+    if signature[0] != HEADER_DET_COMPRESSED:
+        raise FalconError(
+            f"expected det1024 compressed header {HEADER_DET_COMPRESSED:#04x}, "
+            f"got {signature[0]:#04x} (CT/standard inputs are not supported)"
+        )
+    salt_version = signature[1]
+    s2 = _comp_decode(signature[2:])  # validates exact consumption, range
+    body = _trim_i16_encode(s2, CT_COEFFICIENT_BITS)
+    ct = bytes((HEADER_DET_CT, salt_version)) + body
+    if len(ct) != CT_SIGNATURE_SIZE:  # pragma: no cover - fixed by construction
+        raise FalconError("internal: CT signature length mismatch")
+    return ct
