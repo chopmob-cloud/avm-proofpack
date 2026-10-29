@@ -41,6 +41,8 @@ from .client import NodeClient, NodeNotFound
 from .hashes import txid_from_bytes, txid_to_bytes
 from .verify import VerificationError, verify_bundle
 
+STATE_PROOF_INTERVAL = 256  # go-algorand protocol.StateProofInterval
+
 __all__ = ["CaptureError", "NotYetProvable", "capture"]
 
 
@@ -113,6 +115,35 @@ def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.
     # verification can authenticate the signing set offline; without it the best
     # attainable tier is structural/corroborated.
     state_proof_b64_proof = state_proof_b64
+
+    # The PREVIOUS interval's message is what authenticates this proof: its
+    # VotersCommitment and LnProvenWeight are the trusted signing set and weight
+    # bound. The message inside this bundle is authored by the proof builder and
+    # carries the NEXT interval's values, so it must never be used as the bound.
+    # Carried here so the stake-attested check needs no network at verify time.
+    previous_round = last_attested - STATE_PROOF_INTERVAL
+    previous_message = None
+    if previous_round > 0:
+        try:
+            prev_response = client.get_json(f"/v2/stateproofs/{previous_round}")
+            prev_msg = prev_response.get("Message")
+            if isinstance(prev_msg, dict):
+                previous_message = {
+                    "block_headers_commitment_b64": base64.b64encode(
+                        _b64field(prev_msg, "BlockHeadersCommitment", "previous state proof message")
+                    ).decode("ascii"),
+                    "first_attested_round": _uintfield(
+                        prev_msg, "FirstAttestedRound", "previous state proof message"),
+                    "last_attested_round": _uintfield(
+                        prev_msg, "LastAttestedRound", "previous state proof message"),
+                    "ln_proven_weight": _uintfield(
+                        prev_msg, "LnProvenWeight", "previous state proof message"),
+                    "voters_commitment_b64": base64.b64encode(
+                        _b64field(prev_msg, "VotersCommitment", "previous state proof message")
+                    ).decode("ascii"),
+                }
+        except NodeNotFound:
+            previous_message = None  # pruned by the node; bundle stays structural-only
 
     # Transaction proof (SHA-256 tree) and light block header proof.
     txn_proof_response = client.get_json(
@@ -256,6 +287,7 @@ def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.
         # instead of stopping at structural evidence. See docs/handovers/A6-stake-attested.md.
         "state_proof_msgpack_b64": state_proof_b64,
         "state_proof_b64": state_proof_b64_proof,
+        "previous_state_proof_message": previous_message,
         "meta": {
             "light_header_variant": VARIANT_BLOCK_HASH,
             "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

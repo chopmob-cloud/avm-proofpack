@@ -125,6 +125,38 @@ the threshold itself discriminates too.
 claimable offline, the bundle must carry the previous interval's message alongside its own — that is a
 capture-format change (A6 step 1 extension), not a verifier change.
 
+
+## VERIFIED — all six cryptographic steps, entirely offline, with negative controls
+
+`capture` now also carries `previous_state_proof_message` (the authenticated signing set and weight
+bound). With sockets disabled before import, and **no live fetch**, a real bundle gives:
+
+```
+network: blocked
+
+step 2 message hash        fc3c12522f6c2a88bde53d62…
+step 3 falcon signatures   71/71
+step 4 key membership      (verify_reveal performs both, so included in the 71/71)
+step 5 weight (auth ln)    True
+step 6 coin selection      True
+
+negative controls:
+  wrong ln                 False
+  wrong commitment         False
+  tampered message hash    0/71
+```
+
+Captured intervals are contiguous and the offset is visible: previous `[66457089, 66457344]`
+ln = 2,230,418; own `[66457345, 66457600]` ln = 2,230,417.
+
+**So the entire cryptographic core of `stake_attested` works offline from the bundle alone.** Only
+**step 7** remains: emit the tier from `verify_bundle` (and the CLI), failing closed to
+`structural`/`corroborated` when `state_proof_b64` or `previous_state_proof_message` is absent — which is
+the case for every bundle captured before this change, so the fallback path is exercised by existing
+fixtures rather than hypothetical.
+
+Regression: 102 passed, 6 skipped across capture/bundle/verify.
+
 ## Definition of done
 
 The spike script (`netblock` + `verify` on a real bundle) returns exit code `0`, prints
