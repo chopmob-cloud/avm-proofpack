@@ -1,6 +1,6 @@
 # A6 — reaching `stake_attested` (plan + blocker found empirically)
 
-**Status:** not started. This is a plan and a finding, not an implementation.
+**Status:** steps 1-7 complete. `raise if unavailable` no longer applies -- the tier ships.
 
 **Date:** 29 October 2026
 
@@ -156,6 +156,27 @@ the case for every bundle captured before this change, so the fallback path is e
 fixtures rather than hypothetical.
 
 Regression: 102 passed, 6 skipped across capture/bundle/verify.
+
+
+## STEP 7 DONE — the tier is live
+
+`verify_bundle` now sets `trust_root="stake_attested"` when, and only when, the bundle carries both the
+full StateProof and the previous interval's message, and every check passes. Verified offline with
+sockets disabled:
+
+```
+checks passed: ... state-proof-present, state-proof-stake-attested
+trust root:    stake_attested
+```
+
+A bundle without the proof material stays `unattested` and omits the check — confirmed on a pre-change
+bundle captured earlier the same day, so the fallback is exercised by real data.
+
+**Still outstanding, and it matters:** the POSITIVE path is pinned only by the manual offline spike. The
+fixture that exercises it is 834 KB, so it has not been committed. Three tests pin the negative
+directions (no proof → unattested; proof but no previous message → unattested; hostile previous message
+→ fail-closed, no exception), but a regression that broke the positive path would not be caught by the
+suite. Commit the fixture, or build a small-weight synthetic proof, before treating this tier as tested.
 
 ## Definition of done
 

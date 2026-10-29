@@ -83,6 +83,14 @@ class Bundle:
     light_header_variant: str
     captured_at: str
     source_node: str
+    #: The full StateProof (reveals, signature weight, signature). Optional: bundles
+    #: captured before 2026-10-29 carry only the message, and a bundle without this
+    #: can never reach the stake-attested tier.
+    state_proof_proof_bytes: bytes | None = None
+    #: The PREVIOUS interval's message, whose VotersCommitment and LnProvenWeight
+    #: authenticate this proof's signing set and weight bound. Never the message
+    #: carried in this bundle, which is authored by the proof builder.
+    previous_message: dict | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "Bundle":
@@ -148,6 +156,14 @@ class Bundle:
             # commitment hash is 64 bytes, not the 32 of block hashes).
             voters_commitment=_b64(message, "voters_commitment_b64", expect_len=64),
             state_proof_bytes=_b64(data, "state_proof_msgpack_b64"),
+            state_proof_proof_bytes=(
+                _b64(data, "state_proof_b64") if "state_proof_b64" in data else None
+            ),
+            previous_message=(
+                data.get("previous_state_proof_message")
+                if isinstance(data.get("previous_state_proof_message"), dict)
+                else None
+            ),
             light_header_variant=variant,
             captured_at=captured_at,
             source_node=source_node,

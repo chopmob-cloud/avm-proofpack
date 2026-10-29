@@ -83,6 +83,64 @@ class VerificationReport:
     trust_root: str = "unattested"
 
 
+def _verify_stake_attested(bundle, state_proof) -> bool:
+    """Full consensus authentication of the bundle's state proof. Fail-closed.
+
+    Requires the bundle to carry the full StateProof and the PREVIOUS interval's
+    message. The previous message supplies the trusted VotersCommitment and
+    LnProvenWeight; the message inside this bundle is authored by the proof builder
+    and carries the NEXT interval's values, so using it as the bound would make the
+    weight threshold attacker-chosen.
+
+    Any malformed or hostile input returns False; this never raises.
+    """
+    prev = bundle.previous_message
+    if not isinstance(prev, dict):
+        return False
+    try:
+        from .consensus.coins import coin_selection_result
+        from .consensus.stateproof import (
+            iter_reveals,
+            signed_weight_meets_threshold,
+            state_proof_message_hash,
+            verify_reveal,
+        )
+
+        prev_ln = int(prev["ln_proven_weight"])
+        if prev_ln < 0:
+            return False
+        prev_commit = base64.b64decode(prev["voters_commitment_b64"], validate=True)
+        if len(prev_commit) != 64:
+            return False
+
+        message_hash = state_proof_message_hash(
+            block_headers_commitment=bundle.block_headers_commitment,
+            voters_commitment=bundle.voters_commitment,
+            ln_proven_weight=bundle.ln_proven_weight,
+            first_attested_round=bundle.first_attested_round,
+            last_attested_round=bundle.last_attested_round,
+        )
+
+        weight = state_proof.get("w")
+        positions = state_proof.get("pr")
+        sig_commit = state_proof.get("c")
+        if not isinstance(positions, list) or not positions:
+            return False
+        if not signed_weight_meets_threshold(weight, prev_ln, len(positions)):
+            return False
+        for _position, reveal in iter_reveals(state_proof):
+            if not verify_reveal(reveal, message_hash, bundle.last_attested_round):
+                return False
+        return coin_selection_result(
+            state_proof,
+            participants_commitment=prev_commit,
+            ln_proven_weight=prev_ln,
+            signature_commitment=sig_commit,
+            message_hash=message_hash,
+        )
+    except Exception:
+        return False
+
 def _fail(check: str, detail: str) -> VerificationError:
     return VerificationError(check, detail)
 
@@ -281,6 +339,16 @@ def verify_bundle(
         )
     checks.append("state-proof-present")
 
+    # -- stake-attested tier ------------------------------------------------
+    # Reachable only when the bundle carries BOTH the full state proof and the
+    # previous interval's message. Older bundles carry neither, so they stay at
+    # "unattested" -- the degraded path is real, not hypothetical.
+    trust_root = "unattested"
+    if bundle.state_proof_proof_bytes is not None and bundle.previous_message is not None:
+        if _verify_stake_attested(bundle, state_proof):
+            checks.append("state-proof-stake-attested")
+            trust_root = "stake_attested"
+
     return VerificationReport(
         txid=bundle.txid,
         round=bundle.round,
@@ -298,6 +366,7 @@ def verify_bundle(
             "ascii"
         ),
         checks=tuple(checks),
+        trust_root=trust_root,
     )
 
 
