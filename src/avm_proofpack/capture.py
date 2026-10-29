@@ -109,6 +109,10 @@ def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.
         base64.b64decode(state_proof_b64, validate=True)
     except Exception as exc:
         raise CaptureError(f"node's StateProof field is not valid base64: {exc}") from exc
+    # The actual StateProof (reveals, sig weight, signature). Carried in the bundle so
+    # verification can authenticate the signing set offline; without it the best
+    # attainable tier is structural/corroborated.
+    state_proof_b64_proof = state_proof_b64
 
     # Transaction proof (SHA-256 tree) and light block header proof.
     txn_proof_response = client.get_json(
@@ -245,7 +249,13 @@ def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.
                 "ascii"
             ),
         },
+        # NOTE: the key below is the state proof MESSAGE (despite its name), kept
+        # for backwards compatibility with existing bundles. The full state proof --
+        # reveals, signature weight and signature -- is emitted separately in
+        # "state_proof_b64" so a verifier can reach the stake-attested tier offline
+        # instead of stopping at structural evidence. See docs/handovers/A6-stake-attested.md.
         "state_proof_msgpack_b64": state_proof_b64,
+        "state_proof_b64": state_proof_b64_proof,
         "meta": {
             "light_header_variant": VARIANT_BLOCK_HASH,
             "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
