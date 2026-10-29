@@ -64,6 +64,35 @@ limitation, not a verifier limitation** — and it is the real reason the label 
   is and where it came from; an anchor supplied by the same party that supplied the proof confers no
   trust. Do not let A5's green tests imply more than they do.
 
+
+## VERIFIED SO FAR — steps 2, 3 and 4 work offline today
+
+Run against a real Algorand mainnet bundle (`J6FPFF4C…` @ round `66457600`) with no network, using only
+what the bundle carries:
+
+```
+message hash:  fc3c12522f6c2a88bde53d62d4c4cb8d34517065cdae1126ef8035e2efa194a7
+reveals:       71
+signature verifies:                    71/71
+signature + key membership verifies:   71/71
+negative control (ln_proven_weight+1):  0/71   <- correctly zero
+```
+
+So **step 2** (`state_proof_message_hash` over the captured message) is exact, **step 3** (per-reveal
+Falcon-1024 signature verification) passes for every reveal, and **step 4** (ephemeral-key membership
+against the `"KP"` leaf) passes for every reveal as well. The negative control confirms the signatures
+genuinely bind the message rather than verifying vacuously — a one-field tamper takes the pass count to
+zero.
+
+The cryptographic core of the stake-attested tier therefore already works; what remains is **step 5**
+(signing weight against the *authenticated previous-interval* `ln_proven_weight`, which needs the
+previous interval's message as well as this one), **step 6** (A4 coin selection with the authenticated
+participants commitment), and **step 7** (emit the tier and fail closed).
+
+Note on counts: `sp["pr"]` holds 151 *positions to reveal* while `sp["r"]` holds 71 actual reveals. Do
+not use `len(pr)` as the reveal count when iterating (`iter_reveals` yields `(position, reveal)` pairs,
+not bare reveals).
+
 ## Definition of done
 
 The spike script (`netblock` + `verify` on a real bundle) returns exit code `0`, prints
