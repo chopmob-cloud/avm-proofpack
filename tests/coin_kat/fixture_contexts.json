@@ -1,0 +1,25 @@
+{
+  "purpose": "Test-only verifier inputs observed via public APIs; NOT authenticated trust anchors. A5 is still required.",
+  "retrieved_on": "2026-10-29",
+  "contexts": {
+    "algorand-mainnet": {
+      "previous_last_attested_round": 63604736,
+      "voters_commitment_b64": "IRwFosfq3dMsN5NfHs+80bQqNE3qvLu5LUUW5EHWttK2A+P/3VdHNYCZDE8P00xiTKHiYn/JSHNiKudvgVUcIw==",
+      "ln_proven_weight": 2231544,
+      "observed_transaction_id": "DSBTAHIQZXJSDGKSTQHV22BCSWSAIJGGBTA3DQODIRPAQXEKGEJQ",
+      "observed_round": 63604868,
+      "sources": [
+        "https://mainnet-idx.algonode.cloud/v2/transactions?tx-type=stpf&min-round=63604737&max-round=63604992&limit=10",
+        "https://mainnet-idx.4160.nodely.dev/v2/transactions?tx-type=stpf&min-round=63604737&max-round=63604992&limit=10"
+      ]
+    },
+    "voi-mainnet": {
+      "previous_last_attested_round": 21208832,
+      "voters_commitment_b64": "qQxxCd/OWRDiE6zA8RiwE8CW1JPAl077TvTDwWYe7DDNaGCmiJCZEe4aiNYYls3sZ2GdiLKhT+LObWiLoamRqw==",
+      "ln_proven_weight": 2161691,
+      "sources": [
+        "https://mainnet-api.voi.nodely.dev/v2/stateproofs/21208832"
+      ]
+    }
+  }
+}
