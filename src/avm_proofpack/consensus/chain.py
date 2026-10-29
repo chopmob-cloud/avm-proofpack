@@ -1,4 +1,4 @@
-"""Experimental A5 State Proof chain authentication; NOT wired into the package.
+"""State Proof chain authentication (A5): walk a chain from a trusted anchor.
 
 A4 verified coin selection against caller-supplied inputs. A5 removes that
 assumption by walking a chain of State Proofs from a caller-supplied anchor and
@@ -14,8 +14,11 @@ Interval model (confirmed against real mainnet data):
   ``message(R - interval)``.
 
 The root of trust is the caller's anchor. This module never invents one, never
-reads config, and never touches the network. It is excluded from the wheel and
-is never called by the shipped verifier or server.
+reads config, and never touches the network. It is shipped in the package. The
+single-bundle verifier (:func:`avm_proofpack.verify.verify_bundle`) performs the
+equivalent single-link check inline against a ``TrustedVoters`` anchor; use
+:func:`authenticate_chain` here to authenticate a multi-interval chain from one
+anchor.
 """
 from __future__ import annotations
 

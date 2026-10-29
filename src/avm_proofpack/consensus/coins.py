@@ -1,12 +1,13 @@
-"""Experimental A4 State Proof coin selection; NOT a trust root.
+"""State Proof coin selection (A4); not a trust root on its own.
 
 Wire rules follow go-algorand 853f03d6e85a1af1b0d93113df2a94371fb56213,
 crypto/stateproof/{coinGenerator,verifier,const}.go and protocol/hash.go.
 Independent Python implementation; no upstream code is incorporated.
 The signing participants commitment and logarithmic proven weight are verifier
-inputs, NOT automatically the message's next-interval fields. Authenticating
-those inputs belongs to A5. This module is excluded from the wheel and is never
-called by the shipped verifier or server.
+inputs, NOT automatically the message's next-interval fields: the caller must
+supply the trusted values (``TrustedVoters`` / a ``ChainAnchor``). As of 0.4.x
+this module is shipped and ``verify_bundle`` calls it, together with the
+membership and weight checks, to reach the stake-attested tier.
 """
 from __future__ import annotations
 

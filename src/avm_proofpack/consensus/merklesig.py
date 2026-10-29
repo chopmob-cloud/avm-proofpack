@@ -1,11 +1,11 @@
 """Experimental Sumhash512 key-commitment membership (merklesignature tree).
 
-This module is an EXPERIMENTAL foundation layer, a sibling to
+This module is a foundation layer of the stake-attested tier, a sibling to
 :mod:`avm_proofpack.consensus.falcon`,
 :mod:`avm_proofpack.consensus.sumhash` and
-:mod:`avm_proofpack.consensus.stateproof`. It is **not wired into**
-``verify_bundle`` and changes no existing behavior. Importing it has no side
-effects.
+:mod:`avm_proofpack.consensus.stateproof`. As of 0.4.x it **is wired into**
+``verify_bundle`` (via :mod:`.stateproof`, reached when the caller supplies a
+``TrustedVoters`` anchor). Importing it has no side effects.
 
 What this module solves (trust-root step A2)
 --------------------------------------------

@@ -1,11 +1,12 @@
 """Experimental, pure-stdlib Algorand Sumhash512 hash primitive.
 
-This module is an EXPERIMENTAL foundation layer, a sibling to
+This module is a foundation layer of the stake-attested tier, a sibling to
 :mod:`avm_proofpack.consensus.falcon` and
-:mod:`avm_proofpack.consensus.stateproof`. It is **not wired into**
-``verify_bundle`` and changes no existing behavior. Importing it has no side
-effects (the ~64 KiB matrix and its lookup table are built lazily, on the first
-hash, then cached).
+:mod:`avm_proofpack.consensus.stateproof`. As of 0.4.x it **is wired into**
+``verify_bundle`` (via :mod:`.merklesig`/:mod:`.stateproof`, reached when the
+caller supplies a ``TrustedVoters`` anchor). Importing it has no side effects
+(the ~64 KiB matrix and its lookup table are built lazily, on the first hash,
+then cached).
 
 Why this exists
 ---------------

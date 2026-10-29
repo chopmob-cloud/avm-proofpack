@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "avm-proofpack"
-version = "0.4.0"
+version = "0.4.1"
 description = "Offline Algorand and Voi state-proof verification in Python: portable, recomputable transaction evidence anchored in state proofs"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -41,11 +41,11 @@ license-files = ["LICENSE", "NOTICE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-# The consensus package (Falcon-1024 verification, state-proof reconstruction, coin
-# message reconstruction) lives in the source tree for development and review
-# but is NOT shipped: it is unwired, unproven as attestation, and must not reach
-# `pip install avm-proofpack`. Excluded here so a wheel built from any checkout
-# (clean or dirty) omits it.
+# The consensus package (Falcon-1024 verification, state-proof reconstruction,
+# membership proofs, coin selection, chain authentication) IS shipped: as of
+# 0.4.x it backs the stake-attested tier that `verify_bundle` reaches when the
+# caller supplies a TrustedVoters anchor, so it must reach
+# `pip install avm-proofpack` or that import would fail at runtime.
 
 [tool.setuptools.package-data]
 avm_proofpack = ["py.typed"]

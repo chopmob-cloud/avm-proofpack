@@ -1,9 +1,12 @@
 """Experimental, verify-only Falcon-1024 signature primitive (pure stdlib).
 
-This module is an EXPERIMENTAL foundation layer. It is **not yet wired into**
-``verify_bundle`` and it changes no existing behavior. Importing it has no
-side effects. It exists so that a future tier can begin to remove node trust
-by verifying the Falcon-1024 signatures inside Algorand/Voi state proofs.
+This module is a foundation layer of the stake-attested tier. As of 0.4.x it
+**is wired into** ``verify_bundle`` (via
+:mod:`avm_proofpack.consensus.stateproof`), reached when the caller supplies a
+``TrustedVoters`` anchor. Importing it has no side effects. It verifies the
+Falcon-1024 signatures inside Algorand/Voi state proofs. On its own this
+primitive proves only "the holder of this key signed the message"; attestation
+needs the surrounding membership, weight-threshold and coin-selection checks.
 
 What this module IS
 -------------------

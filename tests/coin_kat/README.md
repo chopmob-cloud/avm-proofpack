@@ -1,7 +1,7 @@
 # A4 coin-selection differential vectors
 
-Test-only material for `avm_proofpack._experimental.coins`. **Nothing here is a
-trust anchor and none of it ships in the wheel.**
+Test-only material for `avm_proofpack.consensus.coins`. **Nothing here is a
+trust anchor.**
 
 ## What this proves
 

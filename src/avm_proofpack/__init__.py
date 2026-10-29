@@ -25,13 +25,14 @@ from .mpack import DecodeError, EncodeError
 from .verify import (
     CorroborationReport,
     CorroborationResult,
+    TrustedVoters,
     VerificationError,
     VerificationReport,
     corroborate,
     verify_bundle,
 )
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 __all__ = [
     "Bundle",
@@ -46,6 +47,7 @@ __all__ = [
     "ExtractionError",
     "NotYetProvable",
     "PaymentFacts",
+    "TrustedVoters",
     "UnknownChainError",
     "VerificationError",
     "VerificationReport",

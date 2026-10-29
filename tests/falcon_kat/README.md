@@ -2,7 +2,7 @@
 
 `falcon1024_det_kat.json` holds authentic Falcon-1024 **deterministic
 (det1024)** known-answer test triples — `(public_key, message, signature)` —
-used to validate `avm_proofpack._experimental.falcon.falcon1024_verify`.
+used to validate `avm_proofpack.consensus.falcon.falcon1024_verify`.
 
 ## Why det1024
 
