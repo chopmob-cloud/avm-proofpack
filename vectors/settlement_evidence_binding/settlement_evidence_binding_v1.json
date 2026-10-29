@@ -1,0 +1,157 @@
+{
+  "schema": "avm-proofpack-settlement-evidence-binding/v1",
+  "artefact_id": "settlement-evidence-binding-conformance-v1",
+  "published_at": "2026-08-02T00:00:00Z",
+  "canon_note": "bundle_sha256 = SHA-256( json.dumps(bundle, indent=2, sort_keys=True) + '\\n' ) -- the bytes avm_proofpack.dump_bundle writes. This is NOT RFC 8785 JCS; it is chosen so a downloaded .proofpack.json verifies with plain sha256sum. attestation_content_hash IS JCS (RFC 8785), the same as settlement_attestation_v1. The two canons deliberately differ; see seb-v1-r05 (canary).",
+  "load_bearing_rules": {
+    "R1": "bundle_sha256 == SHA-256(dump_bundle bytes); NOT JCS.",
+    "R2": "settled_payment_ref == 'sha256:'+SHA-256(f'{tenant_id}:{tx_id}:{network}').",
+    "R3": "round == bundle.round == attestation_settlement_round (L2 join).",
+    "R4": "chain_genesis_id == bundle.genesis_id (chain-identity pin).",
+    "R5": "bundle verifies under avm_proofpack.verify_bundle (real anchor)."
+  },
+  "composes_with": {
+    "raw_bundle_set": "../positive, ../negative (the on-chain anchor + its 17 tamper negatives)",
+    "settlement_attestation": "algovoi-jcs-conformance-vectors settlement_attestation_v1 (round-bearing vector settlement-attestation-v1-009) and settlement_action_binding_v1 (sab-v1-007)"
+  },
+  "vectors": [
+    {
+      "vector_id": "seb-v1-001",
+      "kind": "positive",
+      "expectation": "accept",
+      "description": "Reference settlement-evidence binding: a captured avm-proofpack bundle bound to a round-bearing settlement attestation. bundle_sha256 is SHA-256 of dump_bundle's indent-2/sort_keys bytes; settled_payment_ref recomputes from (tenant, tx, network); round == bundle.round == attestation_settlement_round; chain_genesis_id == bundle.genesis_id; the bundle verifies.",
+      "binding": {
+        "scheme": "avm-proofpack/1",
+        "settled_payment_ref": "sha256:d5cfa788eb726f91ea49fee1eec688cc51739ae4bd3ba5b6557252cbeb7cc7dc",
+        "settled_payment_ref_preimage": {
+          "tenant_id": "11111111-1111-4111-8111-111111111111",
+          "tx_id": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+          "network": "algorand"
+        },
+        "network": "algorand",
+        "round": 63604900,
+        "chain_genesis_id": "mainnet-v1.0",
+        "bundle_sha256": "fcb9cd8476106befbfa3a8d3cd277e6d484db5ac0cf3e89fab987cdecf447248",
+        "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+        "attestation_content_hash": "sha256:ded2b865b99abcc248eb7898d60e4b34e629812e0c6b733f206bb6e316e2be8d",
+        "attestation_settlement_round": 63604900
+      }
+    },
+    {
+      "vector_id": "seb-v1-r05",
+      "kind": "canary",
+      "expectation": "reject",
+      "reject_rule": "R1_bundle_sha256_dump_canon_not_jcs",
+      "description": "NON-JCS CANARY. bundle_sha256 is set to the RFC 8785 JCS/compact hash of the bundle. A verifier that (wrongly) assumes JCS for the proofpack bundle would accept this; a conformant verifier recomputes over dump_bundle's indent-2/sort_keys bytes and MUST reject. This is the whole point of documenting the off-canon digest.",
+      "wrong_jcs_bundle_sha256": "c86f996a82a446472f8080661daa5723903b631d70fe2fe96d9cd76664c86d5d",
+      "binding": {
+        "scheme": "avm-proofpack/1",
+        "settled_payment_ref": "sha256:d5cfa788eb726f91ea49fee1eec688cc51739ae4bd3ba5b6557252cbeb7cc7dc",
+        "settled_payment_ref_preimage": {
+          "tenant_id": "11111111-1111-4111-8111-111111111111",
+          "tx_id": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+          "network": "algorand"
+        },
+        "network": "algorand",
+        "round": 63604900,
+        "chain_genesis_id": "mainnet-v1.0",
+        "bundle_sha256": "c86f996a82a446472f8080661daa5723903b631d70fe2fe96d9cd76664c86d5d",
+        "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+        "attestation_content_hash": "sha256:ded2b865b99abcc248eb7898d60e4b34e629812e0c6b733f206bb6e316e2be8d",
+        "attestation_settlement_round": 63604900
+      }
+    },
+    {
+      "vector_id": "seb-v1-r01",
+      "kind": "negative",
+      "expectation": "reject",
+      "reject_rule": "R1_bundle_sha256_recompute",
+      "description": "Fabricated bundle_sha256 (all-f) does not recompute over the bundle bytes.",
+      "binding": {
+        "scheme": "avm-proofpack/1",
+        "settled_payment_ref": "sha256:d5cfa788eb726f91ea49fee1eec688cc51739ae4bd3ba5b6557252cbeb7cc7dc",
+        "settled_payment_ref_preimage": {
+          "tenant_id": "11111111-1111-4111-8111-111111111111",
+          "tx_id": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+          "network": "algorand"
+        },
+        "network": "algorand",
+        "round": 63604900,
+        "chain_genesis_id": "mainnet-v1.0",
+        "bundle_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+        "attestation_content_hash": "sha256:ded2b865b99abcc248eb7898d60e4b34e629812e0c6b733f206bb6e316e2be8d",
+        "attestation_settlement_round": 63604900
+      }
+    },
+    {
+      "vector_id": "seb-v1-r02",
+      "kind": "negative",
+      "expectation": "reject",
+      "reject_rule": "R3_round_join",
+      "description": "Round-join break: the evidence round (and bundle) is for a different round than the attestation's settlement_round. A bundle cannot back an attestation for a round it does not attest.",
+      "binding": {
+        "scheme": "avm-proofpack/1",
+        "settled_payment_ref": "sha256:d5cfa788eb726f91ea49fee1eec688cc51739ae4bd3ba5b6557252cbeb7cc7dc",
+        "settled_payment_ref_preimage": {
+          "tenant_id": "11111111-1111-4111-8111-111111111111",
+          "tx_id": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+          "network": "algorand"
+        },
+        "network": "algorand",
+        "round": 63604900,
+        "chain_genesis_id": "mainnet-v1.0",
+        "bundle_sha256": "fcb9cd8476106befbfa3a8d3cd277e6d484db5ac0cf3e89fab987cdecf447248",
+        "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+        "attestation_content_hash": "sha256:ded2b865b99abcc248eb7898d60e4b34e629812e0c6b733f206bb6e316e2be8d",
+        "attestation_settlement_round": 63604901
+      }
+    },
+    {
+      "vector_id": "seb-v1-r03",
+      "kind": "negative",
+      "expectation": "reject",
+      "reject_rule": "R2_settled_payment_ref_recompute",
+      "description": "settled_payment_ref does not recompute from (tenant, tx, network) -- evidence cannot be re-pointed to another charge.",
+      "binding": {
+        "scheme": "avm-proofpack/1",
+        "settled_payment_ref": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "settled_payment_ref_preimage": {
+          "tenant_id": "11111111-1111-4111-8111-111111111111",
+          "tx_id": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+          "network": "algorand"
+        },
+        "network": "algorand",
+        "round": 63604900,
+        "chain_genesis_id": "mainnet-v1.0",
+        "bundle_sha256": "fcb9cd8476106befbfa3a8d3cd277e6d484db5ac0cf3e89fab987cdecf447248",
+        "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+        "attestation_content_hash": "sha256:ded2b865b99abcc248eb7898d60e4b34e629812e0c6b733f206bb6e316e2be8d",
+        "attestation_settlement_round": 63604900
+      }
+    },
+    {
+      "vector_id": "seb-v1-r04",
+      "kind": "negative",
+      "expectation": "reject",
+      "reject_rule": "R4_chain_identity_pin",
+      "description": "chain_genesis_id does not match the bundle's genesis id (chain-identity pin): evidence from one chain cannot back a settlement claimed on another.",
+      "binding": {
+        "scheme": "avm-proofpack/1",
+        "settled_payment_ref": "sha256:d5cfa788eb726f91ea49fee1eec688cc51739ae4bd3ba5b6557252cbeb7cc7dc",
+        "settled_payment_ref_preimage": {
+          "tenant_id": "11111111-1111-4111-8111-111111111111",
+          "tx_id": "CCQU5VMM5K5OHNLK6IVRI5XTKI57HIODHPLKGGS4RZ5GWP3OZYHA",
+          "network": "algorand"
+        },
+        "network": "algorand",
+        "round": 63604900,
+        "chain_genesis_id": "testnet-v1.0",
+        "bundle_sha256": "fcb9cd8476106befbfa3a8d3cd277e6d484db5ac0cf3e89fab987cdecf447248",
+        "bundle_path": "../../tests/fixtures/algorand-mainnet-pay.json",
+        "attestation_content_hash": "sha256:ded2b865b99abcc248eb7898d60e4b34e629812e0c6b733f206bb6e316e2be8d",
+        "attestation_settlement_round": 63604900
+      }
+    }
+  ]
+}
