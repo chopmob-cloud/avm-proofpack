@@ -10,6 +10,26 @@ Take the offline verification spike from exit code `2` (`structure OK, trust roo
 code `0` with `trust_root: stake_attested`, by verifying the state proof's Falcon-1024 signature and
 its signing weight against the authenticated previous interval.
 
+
+## CORRECTION — I misread the bundle, and it changed the diagnosis
+
+The blocker described below was **wrong**. `state_proof_msgpack_b64` is the full **StateProof**
+(reveals, `w`, `pr`, `c`) — the *message* is the separate structured `state_proof_message` section. The
+original 428 KB bundle therefore **already carried the proof**; it was never missing.
+
+Consequences, recorded because they cost real time:
+
+- "Capture must be extended to carry the proof" was based on a misread. The added `state_proof_b64` key
+  was a **duplicate**, which is exactly why the bundle grew 428 KB → 834 KB (roughly double). The
+  duplicate is now removed.
+- The only genuinely new capture data is `previous_state_proof_message`, which IS required and is what
+  makes the authenticated bound available offline.
+- A tamper test that flipped bytes in the duplicate changed nothing and appeared to show the tier was
+  unbound. It was not: tampering the real blob (`state_proof_msgpack_b64`), a `w + 1` lie correctly
+  collapses the tier to `unattested`.
+
+Read the rest of this file as the plan; treat this section as the correction to its premise.
+
 ## The blocker, found by inspection of a real captured bundle
 
 The obvious plan — "move `_experimental/falcon.py` into the shipped path" — **would change nothing**,

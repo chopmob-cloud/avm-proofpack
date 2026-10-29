@@ -280,13 +280,10 @@ def capture(node_url: str, txid: str, round_number: int, *, timeout: float = 30.
                 "ascii"
             ),
         },
-        # NOTE: the key below is the state proof MESSAGE (despite its name), kept
-        # for backwards compatibility with existing bundles. The full state proof --
-        # reveals, signature weight and signature -- is emitted separately in
-        # "state_proof_b64" so a verifier can reach the stake-attested tier offline
-        # instead of stopping at structural evidence. See docs/handovers/A6-stake-attested.md.
+        # The full state proof (reveals, signature weight, signature). Was always
+        # carried here despite the name -- the MESSAGE is the structured
+        # "state_proof_message" section, not this blob.
         "state_proof_msgpack_b64": state_proof_b64,
-        "state_proof_b64": state_proof_b64_proof,
         "previous_state_proof_message": previous_message,
         "meta": {
             "light_header_variant": VARIANT_BLOCK_HASH,

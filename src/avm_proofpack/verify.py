@@ -344,7 +344,7 @@ def verify_bundle(
     # previous interval's message. Older bundles carry neither, so they stay at
     # "unattested" -- the degraded path is real, not hypothetical.
     trust_root = "unattested"
-    if bundle.state_proof_proof_bytes is not None and bundle.previous_message is not None:
+    if bundle.previous_message is not None:
         if _verify_stake_attested(bundle, state_proof):
             checks.append("state-proof-stake-attested")
             trust_root = "stake_attested"
