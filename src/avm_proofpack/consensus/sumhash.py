@@ -1,8 +1,8 @@
 """Experimental, pure-stdlib Algorand Sumhash512 hash primitive.
 
 This module is an EXPERIMENTAL foundation layer, a sibling to
-:mod:`avm_proofpack._experimental.falcon` and
-:mod:`avm_proofpack._experimental.stateproof`. It is **not wired into**
+:mod:`avm_proofpack.consensus.falcon` and
+:mod:`avm_proofpack.consensus.stateproof`. It is **not wired into**
 ``verify_bundle`` and changes no existing behavior. Importing it has no side
 effects (the ~64 KiB matrix and its lookup table are built lazily, on the first
 hash, then cached).
@@ -13,7 +13,7 @@ The next trust tier (removing node trust from a state proof) must verify the
 state proof's Merkle-tree membership of each revealed ephemeral key under the
 participant key commitment. Algorand state-proof trees use **Sumhash512**, not
 SHA-256: a reveal's ``prf.hsh`` type is ``1`` (= Sumhash) with 64-byte nodes
-(see :mod:`avm_proofpack._experimental.stateproof`). The repo's ``merkle.py``
+(see :mod:`avm_proofpack.consensus.stateproof`). The repo's ``merkle.py``
 is SHA-256 / 32-byte and cannot verify those trees. This module supplies the
 raw Sumhash512 primitive (message bytes -> 64-byte digest) that the deferred
 membership check (step A2) will build on. It is KAT-validated against

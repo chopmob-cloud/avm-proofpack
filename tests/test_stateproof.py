@@ -7,7 +7,7 @@ with the KAT-validated Falcon-1024 verifier. If the reconstructed preimage were
 wrong by a single byte, none of these would verify -- so their success is the
 correctness proof for the preimage formula
 (``SHA256("spm" || canonical_msgpack(Message))``; see
-``avm_proofpack._experimental.stateproof`` for the go-algorand derivation).
+``avm_proofpack.consensus.stateproof`` for the go-algorand derivation).
 
 These tests exercise ONLY the Falcon-over-message layer. They deliberately do
 not assert key-commitment membership, weights, or anchoring (out of scope; the
@@ -23,12 +23,12 @@ import pathlib
 import pytest
 
 from avm_proofpack import mpack
-from avm_proofpack._experimental.falcon import (
+from avm_proofpack.consensus.falcon import (
     PUBLIC_KEY_SIZE,
     HEADER_DET_COMPRESSED,
     falcon1024_verify,
 )
-from avm_proofpack._experimental.stateproof import (
+from avm_proofpack.consensus.stateproof import (
     EPHEMERAL_KEY_LEAF_DOMAIN,
     STATE_PROOF_MESSAGE_HASHID,
     RevealSignatureCount,

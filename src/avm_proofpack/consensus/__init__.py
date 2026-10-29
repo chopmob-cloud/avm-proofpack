@@ -14,7 +14,7 @@ trust entirely. It is deliberately quarantined:
 * Verifying a state proof's Falcon signatures proves only that some ephemeral
   keys signed the message; it does **not** yet establish attestation. The
   reveal-signature helper returns a *count*
-  (:class:`avm_proofpack._experimental.stateproof.RevealSignatureCount`) whose
+  (:class:`avm_proofpack.consensus.stateproof.RevealSignatureCount`) whose
   ``is_trust_root`` is always ``False`` until the deferred key-commitment
   membership, signed-weight threshold, coin-position selection, and
   voters-commitment anchoring are implemented.

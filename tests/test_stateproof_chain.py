@@ -19,7 +19,7 @@ def _chain_module():
     import importlib
     import importlib.util
 
-    name = "avm_proofpack._experimental.chain"
+    name = "avm_proofpack.consensus.chain"
     assert importlib.util.find_spec(name) is not None, "A5 chain module is missing"
     return importlib.import_module(name)
 

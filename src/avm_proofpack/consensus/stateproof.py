@@ -1,7 +1,7 @@
 """Experimental state-proof reveal reconstruction (Falcon message preimage).
 
 This module is an EXPERIMENTAL foundation layer, a sibling to
-:mod:`avm_proofpack._experimental.falcon`. It is **not wired into**
+:mod:`avm_proofpack.consensus.falcon`. It is **not wired into**
 ``verify_bundle`` and
 changes no existing behavior. Importing it has no side effects. It exists so a
 future tier can begin to remove node trust by verifying the Falcon-1024
@@ -14,7 +14,7 @@ bytes*. The missing piece was: **what message does a state-proof reveal's
 Falcon signature actually sign?** This module answers that, reconstructs the
 message from fields already carried in a bundle, and (via the test suite)
 proves that a real captured reveal VERIFIES with
-:func:`avm_proofpack._experimental.falcon.falcon1024_verify`.
+:func:`avm_proofpack.consensus.falcon.falcon1024_verify`.
 
 The preimage, derived from primary source
 -----------------------------------------
@@ -66,7 +66,7 @@ Verifying a reveal's Falcon signature proves only "the holder of this ephemeral
 Falcon key signed this state-proof message".
 
 Step A2 -- ephemeral-key membership -- is now IMPLEMENTED (see
-:mod:`avm_proofpack._experimental.merklesig` and :func:`verify_reveal` /
+:mod:`avm_proofpack.consensus.merklesig` and :func:`verify_reveal` /
 :func:`verify_ephemeral_key_membership` below). Combined, they prove "the holder
 of an ephemeral key *committed under this participant's key commitment* signed
 the state-proof message": the ephemeral key's Sumhash512 vector-commitment
@@ -683,7 +683,7 @@ def sig_slot_leaf(reveal: object) -> bytes:
             LE64(VectorCommitmentIndex) || SingleLeafProof.fixed
 
     ``Falcon_CT`` is the compressed signature re-encoded to the fixed-length CT
-    format (:func:`avm_proofpack._experimental.falcon.signature_ct_representation`),
+    format (:func:`avm_proofpack.consensus.falcon.signature_ct_representation`),
     ``VerifyingKey`` is the raw 1793-byte ephemeral public key, and the trailing
     proof is the ephemeral key's membership proof serialized fixed-length. Every
     field is validated; raises :class:`StateProofError` on any malformation.
@@ -960,7 +960,7 @@ def verify_signed_weight_threshold(
        **attacker-chosen**: the message is authored by whoever builds the proof, so a forged
        message can set ``ln = 0`` and clear the threshold with a tiny ``SignedWeight``. The
        correct bound is the previous interval's authenticated value;
-       :func:`._experimental.chain.verify_link` threads it correctly. Retained for conformance
+       :func:`.consensus.chain.verify_link` threads it correctly. Retained for conformance
        vectors only -- this helper does not authenticate its own input.
 
     Pulls the declared ``SignedWeight`` (``w``) and the coin count

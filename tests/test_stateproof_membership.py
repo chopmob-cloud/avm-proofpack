@@ -6,7 +6,7 @@ reveals and verify their Sumhash512 vector-commitment membership proof
 EVERY fixture. If the leaf encoding, the ``"MA"`` node hashing, the bit-reversed
 vector-commitment index, or the leaf round were wrong by a single byte, none of
 these would verify -- so their success on real mainnet data is the correctness
-proof for the encoding (see ``avm_proofpack._experimental.merklesig`` for the
+proof for the encoding (see ``avm_proofpack.consensus.merklesig`` for the
 go-algorand derivation).
 
 These tests also exercise ``verify_reveal`` (Falcon signature AND membership,
@@ -25,7 +25,7 @@ import pathlib
 import pytest
 
 from avm_proofpack import mpack
-from avm_proofpack._experimental.merklesig import (
+from avm_proofpack.consensus.merklesig import (
     CRYPTO_PRIMITIVES_ID,
     KEYS_IN_MSS_DOMAIN,
     MerkleSigError,
@@ -33,7 +33,7 @@ from avm_proofpack._experimental.merklesig import (
     committable_public_key_leaf,
     verify_sumhash_vector_commitment,
 )
-from avm_proofpack._experimental.stateproof import (
+from avm_proofpack.consensus.stateproof import (
     StateProofError,
     ephemeral_key_first_round,
     iter_reveals,
@@ -108,7 +108,7 @@ def test_membership_leaf_matches_documented_encoding(name):
     """The leaf is Sumhash512("KP" || LE16(0) || LE64(round) || vkey.k)."""
     import struct
 
-    from avm_proofpack._experimental.sumhash import sumhash512
+    from avm_proofpack.consensus.sumhash import sumhash512
 
     bundle = _load(name)
     state_proof = _decoded_state_proof(bundle)

@@ -1,6 +1,6 @@
 """Tests for the experimental pure-stdlib Algorand Sumhash512 primitive.
 
-Validates ``avm_proofpack._experimental.sumhash`` against authentic go-sumhash
+Validates ``avm_proofpack.consensus.sumhash`` against authentic go-sumhash
 known-answer vectors (see ``tests/sumhash_kat/README.md`` for provenance): the
 computed digest must match each vendored expected digest byte-for-byte, plus
 basic property checks (determinism, 64-byte output length, avalanche sanity,
@@ -15,8 +15,8 @@ import pathlib
 
 import pytest
 
-from avm_proofpack._experimental import sumhash as _sumhash
-from avm_proofpack._experimental.sumhash import (
+from avm_proofpack.consensus import sumhash as _sumhash
+from avm_proofpack.consensus.sumhash import (
     BLOCK_SIZE,
     DIGEST_SIZE,
     MATRIX_SEED,

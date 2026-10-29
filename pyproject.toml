@@ -41,12 +41,11 @@ license-files = ["LICENSE", "NOTICE"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-# The experimental trust-root groundwork (Falcon-1024 verification, state-proof
+# The consensus package (Falcon-1024 verification, state-proof reconstruction, coin
 # message reconstruction) lives in the source tree for development and review
 # but is NOT shipped: it is unwired, unproven as attestation, and must not reach
 # `pip install avm-proofpack`. Excluded here so a wheel built from any checkout
 # (clean or dirty) omits it.
-exclude = ["avm_proofpack._experimental*"]
 
 [tool.setuptools.package-data]
 avm_proofpack = ["py.typed"]

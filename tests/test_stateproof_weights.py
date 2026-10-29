@@ -9,7 +9,7 @@ Falcon compressed->CT conversion, the participant/PK layout), the Sumhash512
 sibling/hint traversal, or the log-domain weight arithmetic were wrong by a
 single byte or bit, none of these would verify -- so their success on real
 mainnet data is the correctness proof (see
-``avm_proofpack._experimental.stateproof`` for the go-algorand derivation).
+``avm_proofpack.consensus.stateproof`` for the go-algorand derivation).
 
 HONEST SCOPE. A3 is NOT the trust root:
 
@@ -37,7 +37,7 @@ import pathlib
 import pytest
 
 from avm_proofpack import mpack
-from avm_proofpack._experimental.stateproof import (
+from avm_proofpack.consensus.stateproof import (
     STRENGTH_TARGET_DEFAULT,
     StateProofError,
     accumulate_revealed_weight,

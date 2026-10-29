@@ -1,9 +1,9 @@
 """Experimental Sumhash512 key-commitment membership (merklesignature tree).
 
 This module is an EXPERIMENTAL foundation layer, a sibling to
-:mod:`avm_proofpack._experimental.falcon`,
-:mod:`avm_proofpack._experimental.sumhash` and
-:mod:`avm_proofpack._experimental.stateproof`. It is **not wired into**
+:mod:`avm_proofpack.consensus.falcon`,
+:mod:`avm_proofpack.consensus.sumhash` and
+:mod:`avm_proofpack.consensus.stateproof`. It is **not wired into**
 ``verify_bundle`` and changes no existing behavior. Importing it has no side
 effects.
 

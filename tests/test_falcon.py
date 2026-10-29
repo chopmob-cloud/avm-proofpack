@@ -1,6 +1,6 @@
 """Tests for the experimental verify-only Falcon-1024 primitive.
 
-Validates ``avm_proofpack._experimental.falcon`` against authentic Falcon-1024
+Validates ``avm_proofpack.consensus.falcon`` against authentic Falcon-1024
 deterministic (det1024) known-answer test vectors (see
 ``tests/falcon_kat/README.md`` for provenance): valid triples must ACCEPT,
 and tampered signatures / wrong messages / wrong keys / malformed input must
@@ -14,8 +14,8 @@ import pathlib
 
 import pytest
 
-from avm_proofpack._experimental import falcon as _falcon
-from avm_proofpack._experimental.falcon import (
+from avm_proofpack.consensus import falcon as _falcon
+from avm_proofpack.consensus.falcon import (
     BETA_SQ,
     HEADER_DET_COMPRESSED,
     PUBLIC_KEY_SIZE,
@@ -223,20 +223,24 @@ def test_module_is_isolated_and_not_wired():
 
     import avm_proofpack
 
-    # importable as an internal experimental module, but NOT part of the
-    # published package API (and excluded from the built distribution, see
-    # pyproject [tool.setuptools.packages.find] exclude).
-    falcon = importlib.import_module("avm_proofpack._experimental.falcon")
+    # Promoted out of _experimental/ on 2026-10-29 and now published as
+    # avm_proofpack.consensus.falcon, included in the wheel. The stake-attested
+    # tier requires it to be reachable from the shipped verifier, so the old
+    # "must not be wired" assertions are deliberately retired.
+    falcon = importlib.import_module("avm_proofpack.consensus.falcon")
     assert hasattr(falcon, "falcon1024_verify")
-    assert "falcon1024_verify" not in getattr(avm_proofpack, "__all__", [])
     assert not hasattr(avm_proofpack, "_falcon")  # the old top-level name is gone
 
-    # verify.py may mention Falcon as a planned tier in comments, but it must
-    # not import or call the primitive, nor reach the experimental package.
-    from avm_proofpack import verify as verify_mod
-
-    src = pathlib.Path(verify_mod.__file__).read_text()
-    assert "_experimental" not in src
-    assert "_falcon" not in src
-    assert "falcon1024_verify" not in src
-    assert "falcon1024_accepts" not in src
+    # The primitive must remain stdlib-only, or the package stops being
+    # zero-dependency. Checked on the source rather than sys.modules, which is
+    # polluted by the test runner itself.
+    import ast as _ast
+    _tree = _ast.parse(pathlib.Path(falcon.__file__).read_text())
+    _tops = set()
+    for _node in _ast.walk(_tree):
+        if isinstance(_node, _ast.Import):
+            _tops.update(a.name.split('.')[0] for a in _node.names)
+        elif isinstance(_node, _ast.ImportFrom) and _node.level == 0 and _node.module:
+            _tops.add(_node.module.split('.')[0])
+    _non_stdlib = _tops - set(__import__('sys').stdlib_module_names)
+    assert not _non_stdlib, f"falcon imports non-stdlib modules: {_non_stdlib}"

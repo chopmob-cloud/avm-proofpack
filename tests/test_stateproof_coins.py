@@ -14,7 +14,7 @@ _VECTORS = json.loads((Path(__file__).parent / "coin_kat/coins_v0.json").read_te
 
 
 def _coins_module():
-    name = "avm_proofpack._experimental.coins"
+    name = "avm_proofpack.consensus.coins"
     assert importlib.util.find_spec(name) is not None, "A4 coin-selection module is missing"
     return importlib.import_module(name)
 
@@ -48,7 +48,7 @@ def _fixture(name) -> tuple[Any, dict]:
     import base64
 
     from avm_proofpack import mpack
-    from avm_proofpack._experimental.stateproof import state_proof_message_hash
+    from avm_proofpack.consensus.stateproof import state_proof_message_hash
     b = json.loads((Path(__file__).parent / "fixtures" / f"{name}.json").read_text(encoding="utf-8"))
     m = b["state_proof_message"]
     contexts = json.loads((Path(__file__).parent / "coin_kat/fixture_contexts.json").read_text(encoding="utf-8"))["contexts"]
