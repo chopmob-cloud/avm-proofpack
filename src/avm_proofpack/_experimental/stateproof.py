@@ -906,7 +906,13 @@ def signed_weight_meets_threshold(
 
         num_reveals * (x + w * y)  >=  (strength_target * T + num_reveals * P) * y
 
-    where ``P = ln_proven_weight`` (the message's ``LnProvenWeight``, i.e.
+    where ``P = ln_proven_weight`` is the **proven-weight bound supplied by the verifier**, i.e.
+    the value from the previous interval's authenticated message -- NOT the ``LnProvenWeight`` of
+    the message being verified. That field is authored by whoever builds the proof and is part of
+    the *signed preimage*; feeding it in here makes the bound attacker-chosen (measured: the
+    minimum passing ``SignedWeight`` collapses from ~2e15 to 4 at ``ln = 0``). go-algorand keeps
+    ``lnProvenWeight`` in the Verifier struct and derives proven weight from the ledger's online
+    total weight for exactly this reason.
     ``ceil(ln(provenWeight) * 2**16)``). This is the real, log-domain
     proven-weight check the verifier runs -- there is no separate scalar
     ``signedWeight >= provenWeight`` test; the inequality above encodes it.
@@ -948,6 +954,14 @@ def verify_signed_weight_threshold(
     strength_target: int = STRENGTH_TARGET_DEFAULT,
 ) -> bool:
     """Verify a state proof's declared SignedWeight clears the threshold. Fail-closed.
+
+    .. warning::
+       Passing the *message's* ``LnProvenWeight`` makes the proven-weight bound
+       **attacker-chosen**: the message is authored by whoever builds the proof, so a forged
+       message can set ``ln = 0`` and clear the threshold with a tiny ``SignedWeight``. The
+       correct bound is the previous interval's authenticated value;
+       :func:`._experimental.chain.verify_link` threads it correctly. Retained for conformance
+       vectors only -- this helper does not authenticate its own input.
 
     Pulls the declared ``SignedWeight`` (``w``) and the coin count
     ``len(PositionsToReveal)`` (``pr``) from ``state_proof`` and the

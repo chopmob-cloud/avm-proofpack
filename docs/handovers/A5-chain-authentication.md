@@ -74,16 +74,20 @@ Verified empirically: the Algorand proof attesting `63604992` verifies with the 
 | Gate | Result |
 |---|---|
 | `pytest tests/test_stateproof_chain.py` | **20 passed** (real Falcon verification, not stubs) |
-| Full suite `pytest -q` | **514 passed, 6 skipped** |
-| Per-guard mutation | **17/23 killed**; 6 survivors, of which only ONE is a genuine equivalent mutant — see below |
+| Full suite `pytest -q` | **517 passed, 6 skipped** (re-measured at round 2) |
+| Per-guard mutation | **18/23 killed**; 5 survivors, of which only ONE is a genuine equivalent mutant — see below |
 | Real chain | 2 links, `is_trust_root is True` |
 | `ruff check` | clean |
 
 ### Mutation accounting (corrected after review)
 
-An earlier draft claimed "5/7 killed, 2 equivalent mutants". A 23-mutation sweep showed that was a
-statement about a hand-picked seven and **understated real survivors**. Honest position: **17/23
-killed, 6 survivors**, and only **one** of them is a genuine equivalent mutant.
+This number has been wrong twice; here is the round-2 independently measured position.
+**18/23 killed, 5 survivors**, of which **one** is a genuine equivalent mutant
+(`no_target_after_anchor` — the `ChainResult.__post_init__` invariant rejects the resulting
+ok-with-no-inputs result). The four non-equivalent survivors (`no_anchor_ln_guard`,
+`no_links_is_dict`, `no_walk_chainlink`, `no_msg_uint_type`) are all **fail-closed**: they change only
+the error surface (ChainError vs a failed `ChainResult`), never turn a reject into an accept. Earlier
+figures ("5/7", then "17/23") were both wrong.
 
 **The one genuine equivalent mutant:** dropping the target-after-anchor check. With it removed, a
 `target <= anchor` reaches `ChainResult(True, 0, target, None, None)`, which `__post_init__` rejects
@@ -117,10 +121,14 @@ checks and then calls `signed_weight_meets_threshold` with the **authenticated p
 `test_threshold_uses_the_authenticated_ln_not_the_messages`, which asserts the threshold is invoked
 with the authenticated value; the mutation that restores the defect is killed.
 
-Also corrected: `stateproof.py`'s A4 docstring states the threshold input is "the message's
-LnProvenWeight". go-algorand keeps `lnProvenWeight` in the Verifier struct and derives proven weight
-from ledger online total weight — the message value is only the signature preimage. **Do not re-wire
-the threshold to the message.**
+**Correction I previously claimed but had NOT made** (caught in round 2): `stateproof.py`'s A3
+docstring still said the proven-weight bound was the message's `LnProvenWeight`, and
+`verify_signed_weight_threshold` still took that value from a caller-supplied message — so
+`{"w": 4, "pr": [...149 items...]}` with `ln = 0` returned `True`. A5's own path was never exposed
+(it threads the authenticated value), but the hazard shipped as a documented public API. Both
+docstrings now state that the bound comes from the verifier context, not the message, and the helper
+carries an explicit warning that it does not authenticate its input. **Do not re-wire the threshold to
+the message.**
 
 ### Defects found by the earlier (aborted) review, now fixed
 
@@ -149,7 +157,7 @@ the threshold to the message.**
 VENV=C:/Users/ETCMC/AppData/Local/hermes/cache/scratch/proofpack-a4/venv/Scripts/python.exe
 cd C:/algo/worktrees/avm-proofpack-stateproof-a4
 $VENV -m pytest tests/test_stateproof_chain.py -q    # 20 passed
-$VENV -m pytest -q                                    # 511 passed, 6 skipped
+$VENV -m pytest -q                                    # 517 passed, 6 skipped
 
 # re-capture the chain fixture (needs network; writes tests/chain_kat/chains.json)
 $VENV tests/chain_kat/fetch_chains.py tests/chain_kat

@@ -17,6 +17,13 @@ ROUNDS = {
     "voi-mainnet": [21208576, 21208832, 21209088],
     "algorand-mainnet": [63604480, 63604736, 63604992],
 }
+# Chain genesis hashes: public constants, not secrets. The state-proof endpoint does not
+# return them, so they are pinned here -- otherwise re-running this script silently omits
+# genesis_hash and the A5 tests fail at import (caught in review).
+GENESIS = {
+    "voi-mainnet": "r20fSQI8gWe/kFZziNonSPCXLwcQmH/nxROvnnueWOk=",
+    "algorand-mainnet": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+}
 
 out = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "tests/chain_kat")
 out.mkdir(parents=True, exist_ok=True)
@@ -41,6 +48,7 @@ for network, rounds in ROUNDS.items():
         }
         print(f"{network} {r}: ok msgpack_len={len(raw)} lar={d['Message']['LastAttestedRound']}")
     if entries:
+        entries["genesis_hash"] = GENESIS[network]
         result[network] = entries
 
 (out / "chains.json").write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
