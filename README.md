@@ -12,14 +12,24 @@ confirms the transaction is committed by the bundle's state proof message.
 
 Read the trust model before you rely on it. Offline verification proves
 internal consistency down to one trust root: the bundle's own state proof
-message. That message is **not** cryptographically verified offline in this
-release, so offline-alone does not prove the message was genuinely produced by
-the chain's consensus stake. Raising that trust root is a separate, explicit
-step, `--corroborate` compares the message against independent nodes today;
-Falcon signature verification of the state proof (removing node trust
-entirely) is the planned next tier. Treat a structure-only result as "this
-bundle is internally consistent", not "consensus attests this". See
-[SPEC.md](SPEC.md) section 6.
+message. That message is **not** authenticated by the default offline path, so
+offline-alone does not prove the message was genuinely produced by the chain's
+consensus stake. Raising that trust root is a separate, explicit step:
+
+- `--corroborate` compares the message against independent nodes today;
+- **stake attestation** cryptographically verifies the state proof's Falcon
+  signatures, reveal membership, signed-weight threshold and coin selection.
+  This is implemented (`avm_proofpack.consensus`, wired into `verify_bundle`),
+  but because a single bundle cannot authenticate the *signing* interval's
+  voters commitment, it is reached only when the caller passes a
+  `TrustedVoters` anchor it independently trusts (from a trusted node, an
+  earlier verified link, or a pinned genesis). Without that anchor the trust
+  root stays `unattested` — the default. See
+  [`consensus/chain.py`](src/avm_proofpack/consensus/chain.py) to authenticate
+  a whole chain of proofs from one anchor.
+
+Treat a structure-only (`unattested`) result as "this bundle is internally
+consistent", not "consensus attests this". See [SPEC.md](SPEC.md) section 6.
 
 Zero runtime dependencies. Pure Python. Works unchanged on any AVM chain that
 generates state proofs (verified live against Algorand mainnet and Voi mainnet).
@@ -138,12 +148,13 @@ Offline, from the bundle's raw bytes alone, the verifier re-derives:
 
 The remaining trust root is the state proof message itself. `--corroborate`
 reduces that from "the capturing node was honest" to "these independent nodes
-do not all collude". Cryptographic verification of the state proof's Falcon
-signatures (removing node trust entirely) is the next tier; groundwork for it
-lives in `src/avm_proofpack/_experimental/` (a working Falcon-1024 verifier and
-state-proof message reconstruction) but is **not shipped and not wired into
-verification** yet (see [Experimental](#experimental) below). The bundle already
-stores the raw state proof, so existing bundles will upgrade without recapture.
+do not all collude". **Stake attestation** removes node trust entirely by
+cryptographically verifying the state proof's Falcon signatures, reveal
+membership, signed-weight threshold and coin selection; it is shipped in
+`avm_proofpack.consensus` and wired into `verify_bundle`, and is reached by
+passing a `TrustedVoters` anchor (see [Stake attestation](#stake-attestation)
+below). The bundle already stores the raw state proof, so existing bundles
+authenticate without recapture.
 
 Two operational consequences of node pruning:
 
@@ -171,26 +182,44 @@ payment-protocol receipts.
   Systems that hash transaction ids for privacy should treat bundle disclosure
   as opt-in (see docs/INTEGRATION.md).
 
-## Experimental
+## Stake attestation
 
-`src/avm_proofpack/_experimental/` holds the groundwork for the next trust
-tier: cryptographic verification of the state proof itself, which would remove
-node trust and make `--corroborate` unnecessary. It currently contains:
+`src/avm_proofpack/consensus/` cryptographically verifies the state proof
+itself — removing node trust (down to a caller-supplied anchor) and making
+`--corroborate` unnecessary for an attested verdict. It contains:
 
 - `falcon.py` — a stdlib-only Falcon-1024 (deterministic, compressed) signature
   verifier, validated against authentic go-algorand/Falcon known-answer vectors
   (`tests/falcon_kat/`).
-- `stateproof.py` — reconstruction of the 32-byte state-proof *message hash*
-  each reveal's Falcon signature is verified over, proven against real captured
-  reveals.
+- `sumhash.py` / `merklesig.py` — Sumhash512 and the merklesignature key-tree
+  membership proof binding each reveal's ephemeral key to its participant.
+- `stateproof.py` — the state-proof *message hash* reconstruction, per-reveal
+  Falcon verification, signature- and participant-tree membership, and the
+  log-domain signed-weight threshold.
+- `coins.py` — Fiat-Shamir coin selection: that the revealed positions are the
+  ones the proof's coins actually select.
+- `chain.py` — walks a chain of state proofs from one trusted `ChainAnchor`,
+  authenticating each link with the previous interval's verified inputs.
 
-This package is deliberately quarantined and **not part of the published
-package**: it is excluded from the built distribution, is not imported by
-`verify_bundle`, and changes no shipped behaviour. Verifying a state proof's
-Falcon signatures proves only that some ephemeral keys signed the message; it is
-**not** attestation until key-commitment membership, the signed-weight
-threshold, coin-based reveal selection, and voters-commitment anchoring are
-implemented. Do not gate any trust decision on it.
+To reach `trust_root == "stake_attested"`, pass `verify_bundle` a
+`TrustedVoters` anchor for the signing interval:
+
+```python
+from avm_proofpack import Bundle, TrustedVoters, verify_bundle
+
+anchor = TrustedVoters(voters_commitment=..., ln_proven_weight=...)  # you trust these
+report = verify_bundle(Bundle.from_dict(data), trusted_voters=anchor)
+assert report.trust_root == "stake_attested"
+```
+
+**Why an anchor is required.** A state proof is signed by the voters committed
+one interval earlier; a single bundle carries that commitment only as unverified
+`previous_message`, so it cannot authenticate its own signing set. The caller
+must supply the voters commitment it independently trusts (a trusted node, an
+earlier verified link, or a pinned genesis). Without it, the participant weights
+and key commitments would be attacker-supplied and the tier would be forgeable —
+so `verify_bundle` stays `unattested` unless the anchor is given, and every
+reveal is bound to that anchor's commitment before the verdict is raised.
 
 A design for exposing capture/verify as a gRPC + REST service (additive to the
 zero-dependency core) is sketched in

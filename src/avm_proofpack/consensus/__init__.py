@@ -1,23 +1,26 @@
-"""Experimental trust-root groundwork. NOT part of the published package.
+"""State-proof consensus verification: the stake-attested trust tier.
 
-This sub-package holds the beginnings of the *next* trust tier: cryptographic
-verification of the Algorand/Voi state proof itself (Falcon-1024 signature
-verification plus state-proof message reconstruction), which would remove node
-trust entirely. It is deliberately quarantined:
+This sub-package cryptographically verifies the Algorand/Voi state proof itself
+and so removes node trust (down to a caller-supplied anchor). It is shipped in
+the built distribution and is used by :func:`avm_proofpack.verify.verify_bundle`
+to reach ``trust_root == "stake_attested"`` when the caller passes a
+:class:`avm_proofpack.verify.TrustedVoters` anchor.
 
-* It is **not imported by** :func:`avm_proofpack.verify.verify_bundle` and
-  changes no shipped behaviour.
-* It is **excluded from the built distribution** (see ``pyproject.toml``
-  ``[tool.setuptools.packages.find]`` ``exclude``), so ``pip install
-  avm-proofpack`` does not ship it. It lives in the source tree for development
-  and review only.
-* Verifying a state proof's Falcon signatures proves only that some ephemeral
-  keys signed the message; it does **not** yet establish attestation. The
-  reveal-signature helper returns a *count*
-  (:class:`avm_proofpack.consensus.stateproof.RevealSignatureCount`) whose
-  ``is_trust_root`` is always ``False`` until the deferred key-commitment
-  membership, signed-weight threshold, coin-position selection, and
-  voters-commitment anchoring are implemented.
+Modules:
 
-Do not gate any trust decision on anything in this package.
+* :mod:`.falcon` -- a stdlib-only Falcon-1024 (det1024, compressed) verifier.
+* :mod:`.sumhash` -- Algorand Sumhash512.
+* :mod:`.merklesig` -- merklesignature key-tree membership (binds each reveal's
+  ephemeral key to its participant's key commitment).
+* :mod:`.stateproof` -- message-hash reconstruction, per-reveal Falcon + key
+  membership, signature-/participant-tree membership, and the signed-weight
+  threshold.
+* :mod:`.coins` -- Fiat-Shamir coin selection.
+* :mod:`.chain` -- multi-interval chain authentication from a trusted anchor.
+
+Trust note: NONE of these is a trust root on its own. Attestation requires the
+full combination AND a caller-supplied trusted anchor for the signing interval's
+voters commitment (a single bundle cannot authenticate that commitment). A
+bundle's own ``previous_state_proof_message`` is attacker-authored and is never a
+trust anchor.
 """

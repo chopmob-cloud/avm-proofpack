@@ -2,8 +2,8 @@
 
 `sumhash512_kat.json` holds authentic **Algorand Sumhash512** known-answer test
 vectors — `(input, expected 64-byte digest)` — used to validate
-`avm_proofpack._experimental.sumhash.sumhash512` /
-`avm_proofpack._experimental.sumhash.Sumhash512`.
+`avm_proofpack.consensus.sumhash.sumhash512` /
+`avm_proofpack.consensus.sumhash.Sumhash512`.
 
 ## What Sumhash512 is
 

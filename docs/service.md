@@ -348,14 +348,15 @@ leaked. `meta.source_node` (which may record a private algod URL) is kept
 per-tenant so it can never be served across the tenant boundary through a shared
 content hash.
 
-**Experimental Falcon / state-proof tier is NOT part of the service
-(S6).** The offline verifier's trust root remains the bundle's own state-proof
-*message*, which is **not** cryptographically verified in this release;
-`--corroborate` / `Corroborate` only reduces that to "these independent nodes do
-not all collude". The experimental Falcon-1024 verifier and state-proof message
-reconstruction (`src/avm_proofpack/_experimental/`) are quarantined: excluded
-from the built distribution, never imported by the service, and honestly report
-`is_trust_root=False`. They do **not** remove node trust yet, and the service
-does not offer a "fully attested" tier. Do not gate any trust decision on them.
+**Stake-attested tier is NOT offered by the service
+(S6).** The service's trust root remains the bundle's own state-proof
+*message*: its `Verify` passes no trust anchor, so every service verdict is
+`trust_root == "unattested"`, and `--corroborate` / `Corroborate` only reduces
+that to "these independent nodes do not all collude". The stake-attested tier
+(`src/avm_proofpack/consensus/`, reached by the library when a caller supplies a
+`TrustedVoters` anchor) is deliberately NOT exposed by the service: the service
+has no trusted anchor to offer on a caller's behalf, so it never returns a
+"fully attested" verdict. A consumer that wants attestation must re-verify the
+returned `bundle_json` offline with its own trusted anchor.
 Release tooling MUST build the image/wheel from a clean checkout or sdist so the
 experimental modules are never globbed into a distribution.

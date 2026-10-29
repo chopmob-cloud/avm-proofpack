@@ -1,11 +1,11 @@
 """Experimental state-proof reveal reconstruction (Falcon message preimage).
 
-This module is an EXPERIMENTAL foundation layer, a sibling to
-:mod:`avm_proofpack.consensus.falcon`. It is **not wired into**
-``verify_bundle`` and
-changes no existing behavior. Importing it has no side effects. It exists so a
-future tier can begin to remove node trust by verifying the Falcon-1024
-signatures inside Algorand/Voi state proofs against the state-proof *message*.
+This module is a foundation layer of the stake-attested tier, a sibling to
+:mod:`avm_proofpack.consensus.falcon`. As of 0.4.x it **is wired into**
+``verify_bundle`` (reached when the caller supplies a ``TrustedVoters`` anchor):
+its per-reveal, membership, weight-threshold and message-hash checks are what
+remove node trust by verifying the Falcon-1024 signatures inside Algorand/Voi
+state proofs against the state-proof *message*. Importing it has no side effects.
 
 What this module solves
 -----------------------

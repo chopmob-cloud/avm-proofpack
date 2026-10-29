@@ -40,12 +40,38 @@ __all__ = [
     "VerificationReport",
     "CorroborationResult",
     "CorroborationReport",
+    "TrustedVoters",
     "verify_bundle",
     "corroborate",
 ]
 
 _MAX_LIGHT_TREE_DEPTH = 20  # a state proof interval is 256 rounds; depth 8
 _MAX_TXN_TREE_DEPTH = 32
+_VOTERS_COMMITMENT_SIZE = 64  # merklesignature root == Sumhash512 digest size
+
+
+@dataclass(frozen=True)
+class TrustedVoters:
+    """A caller-supplied trust anchor for the stake-attested tier.
+
+    The participants that sign a state proof attesting round ``R`` are committed
+    by the voters commitment published one interval earlier, in the message of
+    round ``R - StateProofInterval``. A single bundle cannot authenticate that
+    commitment -- it carries it only as unverified ``previous_message`` -- so the
+    caller must supply the value it independently trusts: taken from a node it
+    trusts, from an earlier verified link (see
+    :mod:`avm_proofpack.consensus.chain`), or from a pinned genesis bootstrap.
+
+    Without a ``TrustedVoters`` anchor, :func:`verify_bundle` cannot raise the
+    trust root above ``"unattested"``: the stake-attested tier is *defined*
+    relative to this anchor, exactly as
+    :class:`avm_proofpack.consensus.chain.ChainAnchor` is. ``voters_commitment``
+    is the 64-byte signing-interval voters commitment; ``ln_proven_weight`` is
+    the matching proven-weight bound (both from that earlier message).
+    """
+
+    voters_commitment: bytes
+    ln_proven_weight: int
 
 
 class VerificationError(Exception):
@@ -74,28 +100,52 @@ class VerificationReport:
     voters_commitment_b64: str
     checks: tuple[str, ...] = field(default_factory=tuple)
 
-    # The trust anchor offline verification reaches. Always "unattested"
-    # here: offline verification proves the transaction is committed by the
-    # bundle's *own* state proof message, which is unauthenticated data the
-    # bundle author supplied. Reducing this ("corroborated") or removing it
-    # ("stake-attested") requires corroborate() or, in a future tier, Falcon
-    # verification of the state proof. See SPEC.md section 6.
+    # The trust tier this verification reached. "unattested" (the default):
+    # offline verification proved the transaction is committed by the bundle's
+    # *own* state proof message, which is unauthenticated data the bundle author
+    # supplied. "stake_attested": the caller supplied a TrustedVoters anchor and
+    # the full state proof -- its reveals, their membership in the trusted voters
+    # and signature commitments, the signed-weight threshold and the coin
+    # selection -- authenticated against it (node trust removed, down to the
+    # anchor). corroborate() separately reduces the unattested trust root by
+    # cross-checking the message against independent nodes. See SPEC.md section 6.
     trust_root: str = "unattested"
 
 
-def _verify_stake_attested(bundle, state_proof) -> bool:
+def _verify_stake_attested(bundle, state_proof, trusted) -> bool:
     """Full consensus authentication of the bundle's state proof. Fail-closed.
 
-    Requires the bundle to carry the full StateProof and the PREVIOUS interval's
-    message. The previous message supplies the trusted VotersCommitment and
-    LnProvenWeight; the message inside this bundle is authored by the proof builder
-    and carries the NEXT interval's values, so using it as the bound would make the
-    weight threshold attacker-chosen.
+    The trust root is the CALLER-SUPPLIED ``trusted`` :class:`TrustedVoters`
+    anchor -- the signing interval's voters commitment and proven-weight bound,
+    which a single bundle cannot authenticate on its own. Against that anchor:
+
+    * every revealed participant is bound to the trusted voters commitment
+      (participant-tree membership), so its weight and key commitment are real
+      and not attacker-supplied;
+    * every revealed signature slot is bound to the proof's own signature
+      commitment (signature-tree membership), so its running weight ``L`` is
+      real;
+    * the aggregate signed-weight threshold uses the anchor's proven weight
+      (never the message's own, which is part of the attacker-authored signed
+      preimage);
+    * every reveal's Falcon signature verifies over the reconstructed message
+      and its ephemeral key is committed under the now-authenticated participant
+      key commitment; and
+    * the Fiat-Shamir coins, seeded from the anchor, select exactly the revealed
+      positions.
+
+    This mirrors the audited single-link logic in
+    :func:`avm_proofpack.consensus.chain.verify_link`. WITHOUT the anchor and the
+    two membership bindings the participant weights and key commitments are
+    attacker-supplied and the tier is forgeable, so all three are mandatory.
+
+    The bundle's own ``previous_message`` is unauthenticated convenience data: if
+    present it must AGREE with the trusted anchor, otherwise the bundle asserts a
+    different signing set than the caller trusts and is rejected.
 
     Any malformed or hostile input returns False; this never raises.
     """
-    prev = bundle.previous_message
-    if not isinstance(prev, dict):
+    if trusted is None:
         return False
     try:
         from .consensus.coins import coin_selection_result
@@ -103,15 +153,34 @@ def _verify_stake_attested(bundle, state_proof) -> bool:
             iter_reveals,
             signed_weight_meets_threshold,
             state_proof_message_hash,
+            verify_participant_tree_membership,
             verify_reveal,
+            verify_signature_tree_membership,
         )
 
-        prev_ln = int(prev["ln_proven_weight"])
-        if prev_ln < 0:
+        if not isinstance(trusted.voters_commitment, (bytes, bytearray)):
             return False
-        prev_commit = base64.b64decode(prev["voters_commitment_b64"], validate=True)
-        if len(prev_commit) != 64:
+        anchor_commit = bytes(trusted.voters_commitment)
+        if len(anchor_commit) != _VOTERS_COMMITMENT_SIZE:
             return False
+        anchor_ln = trusted.ln_proven_weight
+        if not isinstance(anchor_ln, int) or isinstance(anchor_ln, bool) or anchor_ln < 0:
+            return False
+
+        # The bundle's own previous_message is unauthenticated. If present it
+        # must match the trusted anchor, or the bundle is lying about which
+        # interval signed it.
+        prev = bundle.previous_message
+        if isinstance(prev, dict):
+            try:
+                prev_commit = base64.b64decode(prev["voters_commitment_b64"], validate=True)
+                prev_ln = int(prev["ln_proven_weight"])
+            except Exception:
+                return False
+            if len(prev_commit) != _VOTERS_COMMITMENT_SIZE:
+                return False
+            if not hmac.compare_digest(prev_commit, anchor_commit) or prev_ln != anchor_ln:
+                return False
 
         message_hash = state_proof_message_hash(
             block_headers_commitment=bundle.block_headers_commitment,
@@ -121,21 +190,33 @@ def _verify_stake_attested(bundle, state_proof) -> bool:
             last_attested_round=bundle.last_attested_round,
         )
 
-        weight = state_proof.get("w")
         positions = state_proof.get("pr")
-        sig_commit = state_proof.get("c")
         if not isinstance(positions, list) or not positions:
             return False
-        if not signed_weight_meets_threshold(weight, prev_ln, len(positions)):
+
+        # BIND every reveal to the trusted commitment and to the proof's own
+        # signature commitment. These two checks are what make the weights and
+        # key commitments below trustworthy rather than attacker-chosen.
+        if not verify_participant_tree_membership(state_proof, anchor_commit):
             return False
+        if not verify_signature_tree_membership(state_proof):
+            return False
+
+        # Threshold against the TRUSTED proven-weight bound.
+        if not signed_weight_meets_threshold(
+            state_proof.get("w"), anchor_ln, len(positions)
+        ):
+            return False
+
         for _position, reveal in iter_reveals(state_proof):
             if not verify_reveal(reveal, message_hash, bundle.last_attested_round):
                 return False
+
         return coin_selection_result(
             state_proof,
-            participants_commitment=prev_commit,
-            ln_proven_weight=prev_ln,
-            signature_commitment=sig_commit,
+            participants_commitment=anchor_commit,
+            ln_proven_weight=anchor_ln,
+            signature_commitment=state_proof.get("c"),
             message_hash=message_hash,
         )
     except Exception:
@@ -149,6 +230,7 @@ def verify_bundle(
     bundle: Bundle,
     *,
     expected_genesis_hash: bytes | None = None,
+    trusted_voters: "TrustedVoters | None" = None,
 ) -> VerificationReport:
     """Verify every link of a bundle offline; raise on the first broken one.
 
@@ -157,6 +239,13 @@ def verify_bundle(
     the bundle's own genesis hash is used and reported (the proof chain is
     still internally sound, but the caller must then check the chain
     identity themselves).
+
+    ``trusted_voters`` is the caller's trust anchor for the stake-attested tier
+    (see :class:`TrustedVoters`). Only when it is supplied -- and the bundle's
+    full state proof authenticates against it -- does the report reach
+    ``trust_root == "stake_attested"``. Offline bundle data alone can never reach
+    that tier: the signing voters commitment is not self-authenticating, so
+    without an anchor the trust root stays ``"unattested"``.
     """
     checks: list[str] = []
 
@@ -340,14 +429,18 @@ def verify_bundle(
     checks.append("state-proof-present")
 
     # -- stake-attested tier ------------------------------------------------
-    # Reachable only when the bundle carries BOTH the full state proof and the
-    # previous interval's message. Older bundles carry neither, so they stay at
-    # "unattested" -- the degraded path is real, not hypothetical.
+    # Reachable only when the caller supplies a TrustedVoters anchor for the
+    # signing interval AND the bundle's full state proof authenticates against
+    # it. Offline bundle data alone can never reach this tier: the signing
+    # voters commitment is not self-authenticating (see TrustedVoters), so
+    # without an anchor the verdict stays "unattested" -- the degraded path is
+    # the default, not the exception.
     trust_root = "unattested"
-    if bundle.previous_message is not None:
-        if _verify_stake_attested(bundle, state_proof):
-            checks.append("state-proof-stake-attested")
-            trust_root = "stake_attested"
+    if trusted_voters is not None and _verify_stake_attested(
+        bundle, state_proof, trusted_voters
+    ):
+        checks.append("state-proof-stake-attested")
+        trust_root = "stake_attested"
 
     return VerificationReport(
         txid=bundle.txid,

@@ -149,11 +149,22 @@ and the proof is empty.
 
 ## 6. Trust model and security considerations
 
-- **Trust root**: the state proof message. Offline verification proves the
-  transaction is committed *by that message*. Corroboration (comparing the
-  message across independent nodes) reduces node trust; full Falcon
-  verification of the state proof (future tier) removes it, leaving only the
-  chain's stake-honesty assumption.
+- **Trust root**: the state proof message. Offline verification alone
+  (`trust_root == "unattested"`) proves the transaction is committed *by that
+  message*, which the bundle author supplied. Corroboration (comparing the
+  message across independent nodes) reduces node trust. **Stake attestation**
+  (`trust_root == "stake_attested"`) removes node trust by cryptographically
+  verifying the state proof's Falcon signatures, reveal membership in the
+  signing voters and signature commitments, the signed-weight threshold and the
+  coin selection — leaving only the chain's stake-honesty assumption. Because a
+  single bundle cannot authenticate the *signing* interval's voters commitment
+  (it carries it only as unverified `previous_message`), that tier is reached
+  only when the caller passes a trusted anchor (`verify_bundle(...,
+  trusted_voters=TrustedVoters(...))`, or `consensus.chain.authenticate_chain`
+  from a `ChainAnchor`). Without an anchor the trust root stays `unattested`.
+  A verifier MUST NOT treat a bundle's own `previous_state_proof_message` as a
+  trust anchor: it is attacker-authored and is only accepted when it agrees with
+  the caller's trusted anchor.
 - **Capture window**: non-archival nodes prune (~1,000 rounds). Capture
   promptly after the interval closes, or use an archival node.
 - **Chain pinning**: a bundle is internally consistent for *its* chain;

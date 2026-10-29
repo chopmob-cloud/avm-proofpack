@@ -4,6 +4,51 @@ All notable changes to avm-proofpack. The bundle format (SPEC.md) is
 versioned separately from the library; every release below reads and writes
 format version 1 unchanged.
 
+## 0.4.1 - 2026-10-29
+
+### Security
+
+- **The stake-attested tier no longer accepts a self-attested state proof.**
+  `verify_bundle`'s internal `_verify_stake_attested` reached
+  `trust_root == "stake_attested"` while (a) taking its trust anchor
+  (`VotersCommitment`, `LnProvenWeight`) straight from the bundle's own,
+  unauthenticated `previous_state_proof_message`, and (b) never binding the
+  revealed participants to that commitment — it omitted both
+  `verify_participant_tree_membership` and `verify_signature_tree_membership`.
+  A forger could therefore reveal self-generated Falcon keys with arbitrary
+  weights (and `ln_proven_weight = 0` to collapse the threshold) and reach the
+  top trust tier for a transaction consensus never attested — exactly the
+  failure the tier exists to prevent. Reported by security review.
+
+  The fix makes the tier require a **caller-supplied trust anchor**, the new
+  `TrustedVoters(voters_commitment, ln_proven_weight)` passed as
+  `verify_bundle(..., trusted_voters=...)`. Against that anchor the verifier now
+  binds every reveal to the trusted voters commitment (participant-tree
+  membership) and to the proof's signature commitment (signature-tree
+  membership), checks the signed-weight threshold against the anchor's proven
+  weight, verifies each reveal's Falcon signature and ephemeral-key membership,
+  and confirms coin selection — the same sound logic as
+  `consensus.chain.verify_link`. A bundle's own `previous_state_proof_message`
+  is no longer trusted; if present it must merely agree with the anchor.
+
+  **Behavior change:** without a `trusted_voters` anchor, `verify_bundle` (and
+  the CLI and server, which pass none) now report `trust_root == "unattested"`
+  rather than a forgeable `"stake_attested"`. Supply an anchor you independently
+  trust to reach attestation.
+
+- **`TrustedVoters`** is exported from `avm_proofpack`.
+
+### Fixed
+
+- Packaging: the `pyproject.toml` comment claimed the `consensus` package was
+  excluded from the wheel. It was not (and must not be, since `verify_bundle`
+  imports it); the comment is corrected.
+- Docs: README, SPEC §6 and the `consensus` module docstrings described the
+  Falcon/state-proof tier as experimental, "not wired into `verify_bundle`" and
+  living under a non-existent `src/avm_proofpack/_experimental/` directory. They
+  now describe the shipped, anchor-gated stake-attested tier under
+  `src/avm_proofpack/consensus/`.
+
 ## 0.3.0 - 2026-08-02
 
 ### Added
