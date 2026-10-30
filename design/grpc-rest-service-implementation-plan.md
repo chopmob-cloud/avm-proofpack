@@ -57,9 +57,11 @@ for library/CLI users. This is the only edit to the core.
 [project.optional-dependencies]
 server = ["grpclib==<pin>", "betterproto==<pin>", "<rest/http server pin>"]
 ```
-`avm_proofpack_server` is included in `packages.find` (unlike `_experimental`,
-which stays excluded). Without the extra installed, importing the server package
-fails with a clear "install avm-proofpack[server]" message.
+`avm_proofpack_server` is included in `packages.find`. (The consensus tier that
+used to sit in an excluded `_experimental/` directory now ships as
+`avm_proofpack.consensus`; see the S6 note below.) Without the extra installed,
+importing the server package fails with a clear "install avm-proofpack[server]"
+message.
 
 ---
 
@@ -146,8 +148,10 @@ network. Each phase lists its definition of done (DoD).
   verdict-only RPC**. A consumer re-verifies offline.
 - **S5 store** → tenant-scoped index; ownership on every method; not-found
   masking; `source_node` sensitive.
-- **S6 quarantine** → `_experimental` stays excluded from the wheel; the server
-  never imports it.
+- **S6 boundary (revised)** → the tier was promoted to `avm_proofpack.consensus`
+  and ships in the wheel (0.4.1). The server still does not import it: the
+  service exposes structural verification, and attestation needs a caller-supplied
+  anchor that a stateless service does not hold.
 
 ---
 

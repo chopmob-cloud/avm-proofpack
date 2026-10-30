@@ -432,23 +432,25 @@ The content-addressable store (`sha256(bundle_bytes)`, index
   tenants via a shared content-addressed object. Enforce the ownership check on
   **every** store method, not just `Get`.
 
-### S6 — Experimental Falcon / state-proof tier stays out (informational)
-`src/avm_proofpack/_falcon.py` and `_stateproof.py` (the future
-Falcon-attestation trust root) are `_`-prefixed, unexported, git-untracked, and
-unwired into `verify_bundle`; they MUST NOT be imported by the service. Before
-that tier is ever wired anywhere, its reveal-signature counter is a *count*, not
-a verdict (renamed `count_reveal_signatures`, result `is_trust_root=False`, the
-latter a property that cannot be constructed true): attestation requires the
-still-unimplemented key-commitment membership, signed-weight threshold,
-coin-position selection, and voters-commitment anchoring. Do not let a
-`verified == total` count gate any trust decision.
+### S6 — Consensus tier ships in the wheel; the server still does not use it
 
-**Build-hygiene caveat (precise):** "not in the published package" holds only for
-releases built from a **clean git checkout or sdist**. `setuptools`
-`[tool.setuptools.packages.find] where=["src"]` discovers by filesystem, not by
-git, and `_falcon.py`/`_stateproof.py` are top-level modules *inside* the
-`avm_proofpack` package (not sub-packages), so `packages.find`'s `exclude` knob
-cannot drop them — a wheel built from a *dirty* working tree would glob-include
-them. Release tooling MUST build from a clean checkout/sdist. Even if shipped by
-accident they are `_`-prefixed, unexported, side-effect-free on import, and
-honestly report `is_trust_root=False`, so no trust-root bypass results.
+**Superseded by 0.4.1, on an explicit decision to promote.** The Falcon/state-proof code moved from
+`src/avm_proofpack/_experimental/` to `src/avm_proofpack/consensus/` (commit `c6059f6`) and **ships in the
+published wheel**; `verify_bundle` reaches `trust_root="stake_attested"` when the caller supplies a
+`TrustedVoters` anchor (0.4.1, commit `c97dcc3`). This section previously stated the opposite, and was false
+from the moment of promotion.
+
+**Requirements that still hold** (all now implemented in `consensus/`, and exercised by the anchor path):
+
+- a reveal-signature counter is a *count*, not a verdict (`count_reveal_signatures`,
+  `is_trust_root=False`) — do not let `verified == total` gate a trust decision;
+- attestation requires key-commitment membership, signed-weight threshold, coin-position selection and
+  voters-commitment anchoring, and it is only as good as the anchor supplied.
+
+**The service boundary stands, for a different reason.** `avm_proofpack_server` does not import
+`consensus/`: the service is stateless and holds no trusted anchor, so anything it could say about
+attestation would be unanchored. Attestation belongs to the caller.
+
+**Former build-hygiene caveat — no longer applicable.** Wheels built from a dirty tree could previously
+glob-include `_`-prefixed modules by accident. The modules are now published deliberately, and the
+zero-dependency promise is pinned by an AST guard over `consensus/falcon.py` in `tests/test_falcon.py`.

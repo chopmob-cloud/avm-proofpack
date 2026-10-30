@@ -1,5 +1,9 @@
 # A6 — reaching `stake_attested` (plan + blocker found empirically)
 
+> **Historical document.** The paths below read `src/avm_proofpack/_experimental/`, which was promoted to
+> `src/avm_proofpack/consensus/` and now ships in the wheel (0.4.1). Everything else here describes the
+> state of the work at the time of writing and has been left unchanged.
+
 **Status:** steps 1-7 complete. `raise if unavailable` no longer applies -- the tier ships.
 
 **Date:** 29 October 2026

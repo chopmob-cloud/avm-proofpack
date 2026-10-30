@@ -1,5 +1,9 @@
 # Handover — A5: State Proof chain authentication (experimental)
 
+> **Historical document.** The paths below read `src/avm_proofpack/_experimental/`, which was promoted to
+> `src/avm_proofpack/consensus/` and now ships in the wheel (0.4.1). Everything else here describes the
+> state of the work at the time of writing and has been left unchanged.
+
 **Status:** implementation + tests complete; hardening applied; independent review pending.
 **Branch:** `feat/stateproof-a5-chain-walk`
 **Base:** `origin/main` (`avm-proofpack` v0.3.0, after A4 merge `abd6ca2`)

@@ -1,5 +1,9 @@
 # Handover — A4: State Proof coin selection (experimental)
 
+> **Historical document.** The paths below read `src/avm_proofpack/_experimental/`, which was promoted to
+> `src/avm_proofpack/consensus/` and now ships in the wheel (0.4.1). Everything else here describes the
+> state of the work at the time of writing and has been left unchanged.
+
 **Status:** COMPLETE — implementation, tests, hardening and three rounds of independent review. Round 3: PASSED.
 **Branch:** `feat/stateproof-a4-coin-selection`
 **Base:** `origin/main` (`avm-proofpack` v0.3.0)
