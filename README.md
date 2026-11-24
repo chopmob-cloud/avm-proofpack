@@ -1,5 +1,8 @@
 # avm-proofpack
 
+
+[![PyPI](https://img.shields.io/pypi/v/avm-proofpack)](https://pypi.org/project/avm-proofpack/)
+
 **A Python library for offline Algorand state-proof verification.** Portable,
 offline-verifiable transaction evidence for **Algorand** and **Voi**, anchored in
 [state proofs](https://developer.algorand.org/docs/get-details/stateproofs/).
