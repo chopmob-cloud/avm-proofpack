@@ -1,6 +1,6 @@
 # avm-proofpack
 
-[![PyPI](https://img.shields.io/pypi/v/avm-proofpack)](https://pypi.org/project/avm-proofpack/) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/avm-proofpack)](https://pypi.org/project/avm-proofpack/) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE) [![avm-algo-voi-bridge](https://img.shields.io/badge/avm--algo--voi--bridge-8A2BE2)](https://github.com/chopmob-cloud/avm-algo-voi-bridge) [![avm-algovoi-falcon](https://img.shields.io/badge/avm--algovoi--falcon-8A2BE2)](https://github.com/chopmob-cloud/avm-algovoi-falcon) [![avm-hbar-bridge-relayer](https://img.shields.io/badge/avm--hbar--bridge--relayer-8A2BE2)](https://github.com/chopmob-cloud/avm-hbar-bridge-relayer) [![avm-voi-algo-bridge](https://img.shields.io/badge/avm--voi--algo--bridge-8A2BE2)](https://github.com/chopmob-cloud/avm-voi-algo-bridge) [![avm-wormhole-ntt-relayer](https://img.shields.io/badge/avm--wormhole--ntt--relayer-8A2BE2)](https://github.com/chopmob-cloud/avm-wormhole-ntt-relayer)
 
 **A Python library for offline Algorand state-proof verification.** Portable,
 offline-verifiable transaction evidence for **Algorand** and **Voi**, anchored in
