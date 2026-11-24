@@ -1,7 +1,7 @@
 # avm-proofpack
 
 
-[![PyPI](https://img.shields.io/pypi/v/avm-proofpack)](https://pypi.org/project/avm-proofpack/)
+[![PyPI](https://img.shields.io/pypi/v/avm-proofpack)](https://pypi.org/project/avm-proofpack/) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 **A Python library for offline Algorand state-proof verification.** Portable,
 offline-verifiable transaction evidence for **Algorand** and **Voi**, anchored in
